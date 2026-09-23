@@ -1,0 +1,145 @@
+/* ==============================
+   SIDEBAR - ESTILOS
+   ============================== */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1b2a6b;
+  color: #fff;
+  padding: 22px 16px;
+  box-sizing: border-box;
+}
+
+/* Logo */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.brand-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Usuario */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sidebar-user i {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.user-role {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
+}
+
+/* Navegación */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item i {
+  font-size: 1.05rem;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.nav-item.active {
+  background-color: #2f5fe0;
+  color: #fff;
+}
+
+/* ==============================
+   CERRAR SESIÓN (VISIBLE)
+   ============================== */
+.logout-item {
+  margin-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 16px;
+  font-weight: 600;
+  color: #f87171 !important;
+  background: transparent !important;
+}
+
+.logout-item:hover {
+  background-color: rgba(248, 113, 113, 0.15) !important;
+  color: #fca5a5 !important;
+}
+
+.logout-item i {
+  color: inherit;
+}
+
+.sidebar-divider {
+  border-color: rgba(255,255,255,0.1);
+  margin: 0.75rem 1rem;
+}
+
+.sidebar-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.4);
+  padding: 0.5rem 1.5rem 0.25rem;
+  font-weight: 700;
+}

@@ -1,0 +1,268 @@
+<div class="container-fluid mt-4">
+
+  <!-- Encabezado -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-0" style="color: #1a1a2e;">
+        <i class="bi bi-truck" style="color: #0d9488;"></i> Proveedores
+      </h2>
+      <p class="text-muted small mb-0" style="font-weight: 400;">Gestión de proveedores de productos</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <button class="btn-farma-refrescar" (click)="cargarProveedores()" [disabled]="cargando">
+        <i class="bi bi-arrow-clockwise" [ngClass]="{'spin': cargando}"></i>
+        {{ cargando ? 'Cargando...' : 'Actualizar' }}
+      </button>
+      <button *ngIf="isAdmin" class="btn-farma-nuevo" [disabled]="showModal" (click)="abrirModalCrear()">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Proveedor
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="row g-3 mb-4 align-items-center">
+    <div class="col-md-5 d-flex flex-wrap gap-2">
+      <span class="badge bg-light text-dark p-2 shadow-sm">
+        <i class="bi bi-database me-1"></i> {{ proveedores.length }} proveedores
+      </span>
+      <span class="badge bg-light text-dark p-2 shadow-sm" *ngIf="filtroBusqueda || filtroRegion">
+        <i class="bi bi-funnel me-1"></i> {{ totalFiltrados }} mostrados
+      </span>
+    </div>
+    <div class="col-md-4">
+      <select class="form-select form-select-sm shadow-sm" 
+              [(ngModel)]="filtroRegion" (ngModelChange)="filtrarInstantaneo()">
+        <option value="">Todas las regiones</option>
+        <option *ngFor="let region of regiones" [value]="region">{{ region }}</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <div class="input-group input-group-sm shadow-sm">
+        <span class="input-group-text bg-white border-end-0">
+          <i class="bi bi-search text-muted"></i>
+        </span>
+        <input type="text" class="form-control border-start-0"
+               placeholder="Buscar por razón social o RUC..."
+               [(ngModel)]="filtroBusqueda"
+               (ngModelChange)="filtrarInstantaneo()">
+        <button *ngIf="filtroBusqueda || filtroRegion" class="btn btn-outline-secondary" type="button" (click)="limpiarFiltro()">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div *ngIf="cargando" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Sin resultados -->
+  <div *ngIf="!cargando && proveedoresFiltrados.length === 0" class="text-center py-5 text-muted">
+    <i class="bi bi-inbox display-4 d-block mb-2" style="color: #cbd5e1;"></i>
+    <p class="mb-0">No hay proveedores para mostrar</p>
+  </div>
+
+  <!-- ======== CUADRÍCULA DE PROVEEDORES (con scroll propio, sin paginación) ======== -->
+  <div *ngIf="!cargando && proveedoresFiltrados.length > 0" class="proveedor-grid">
+    <div *ngFor="let proveedor of proveedoresFiltrados" 
+         class="card proveedor-card shadow-sm border-0 rounded-4">
+
+      <!-- Avatar con inicial -->
+      <div class="proveedor-avatar" [style.background]="obtenerColorAvatar(proveedor.razonSocial)">
+        {{ proveedor.razonSocial.charAt(0).toUpperCase() }}
+      </div>
+
+      <!-- Nombre -->
+      <h6 class="proveedor-nombre">{{ proveedor.razonSocial }}</h6>
+
+      <!-- Datos -->
+      <div class="proveedor-datos">
+        <span><i class="bi bi-credit-card me-1"></i> RUC: {{ proveedor.ruc }}</span>
+        <span *ngIf="proveedor.contacto"><i class="bi bi-person me-1"></i> {{ proveedor.contacto }}</span>
+        <span *ngIf="proveedor.telefono"><i class="bi bi-telephone me-1"></i> {{ proveedor.telefono }}</span>
+        <span *ngIf="proveedor.email" class="text-truncate"><i class="bi bi-envelope me-1"></i> {{ proveedor.email }}</span>
+        <span *ngIf="proveedor.region"><i class="bi bi-geo-alt me-1"></i> {{ proveedor.region }}</span>
+      </div>
+
+      <!-- Acciones -->
+      <div class="proveedor-acciones" *ngIf="isAdmin">
+        <button class="btn btn-sm btn-farma-editar" 
+                title="Editar proveedor"
+                [disabled]="showModal || eliminandoId === proveedor.id"
+                (click)="abrirModalEditar(proveedor)">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+        <button class="btn btn-sm btn-farma-eliminar" 
+                title="Eliminar proveedor"
+                [disabled]="eliminandoId === proveedor.id"
+                (click)="eliminar(proveedor.id!)">
+          <span *ngIf="eliminandoId === proveedor.id" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="eliminandoId !== proveedor.id" class="bi bi-trash"></i>
+          <span *ngIf="eliminandoId !== proveedor.id">Eliminar</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ======== PANEL LATERAL: NUEVO/EDITAR PROVEEDOR ======== -->
+<div *ngIf="showModal" class="proveedor-panel-overlay" (click)="cerrarModal()"></div>
+
+<div class="proveedor-panel" [class.show]="showModal" *ngIf="showModal" role="dialog">
+
+  <!-- HEADER -->
+  <div class="proveedor-panel-header">
+    <div class="d-flex align-items-center gap-3">
+      <div class="icon-circle" [ngClass]="esEdicion ? 'bg-warning' : 'bg-success'">
+        <i class="bi" [ngClass]="esEdicion ? 'bi-pencil' : 'bi-plus-lg'" style="font-size: 1.3rem; color: white;"></i>
+      </div>
+      <div>
+        <h5 class="fw-bold mb-0" style="color: #1a1a2e;">
+          {{ esEdicion ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
+        </h5>
+        <p class="text-muted small mb-0" style="font-weight: 400;">
+          {{ esEdicion ? 'Actualiza los datos del proveedor' : 'Registra un nuevo proveedor' }}
+        </p>
+      </div>
+    </div>
+    <button type="button" class="btn-close" (click)="cerrarModal()" aria-label="Close"></button>
+  </div>
+
+  <!-- BODY -->
+  <div class="proveedor-panel-body">
+    <form #formProveedor="ngForm" novalidate>
+
+      <!-- RUC -->
+      <div class="mb-3">
+        <label for="rucProveedor" class="form-label fw-semibold text-secondary">
+          <i class="bi bi-credit-card me-1"></i> RUC <span class="text-danger">*</span>
+        </label>
+        <input type="text" id="rucProveedor" 
+               class="form-control form-control-lg border-2"
+               #rucField="ngModel"
+               [class.is-invalid]="rucField.invalid && (rucField.touched || formProveedor.submitted)"
+               [(ngModel)]="proveedorEdit.ruc" name="ruc"
+               required minlength="11" maxlength="11" pattern="^[0-9]{11}$"
+               placeholder="12345678901">
+        <div class="invalid-feedback" *ngIf="rucField.errors?.['required'] && (rucField.touched || formProveedor.submitted)">
+          <i class="bi bi-exclamation-circle me-1"></i> El RUC es obligatorio.
+        </div>
+        <div class="invalid-feedback" *ngIf="(rucField.errors?.['minlength'] || rucField.errors?.['pattern']) && (rucField.touched || formProveedor.submitted)">
+          <i class="bi bi-exclamation-circle me-1"></i> El RUC debe tener 11 dígitos numéricos.
+        </div>
+      </div>
+
+      <!-- Razón Social -->
+      <div class="mb-3">
+        <label for="razonSocialProveedor" class="form-label fw-semibold text-secondary">
+          <i class="bi bi-building me-1"></i> Razón Social <span class="text-danger">*</span>
+        </label>
+        <input type="text" id="razonSocialProveedor" 
+               class="form-control form-control-lg border-2"
+               #razonField="ngModel"
+               [class.is-invalid]="razonField.invalid && (razonField.touched || formProveedor.submitted)"
+               [(ngModel)]="proveedorEdit.razonSocial" name="razonSocial"
+               required minlength="3" maxlength="100"
+               placeholder="Nombre de la empresa">
+        <div class="invalid-feedback" *ngIf="razonField.errors?.['required'] && (razonField.touched || formProveedor.submitted)">
+          <i class="bi bi-exclamation-circle me-1"></i> La razón social es obligatoria.
+        </div>
+        <div class="invalid-feedback" *ngIf="razonField.errors?.['minlength'] && (razonField.touched || formProveedor.submitted)">
+          <i class="bi bi-exclamation-circle me-1"></i> Debe tener al menos 3 caracteres.
+        </div>
+      </div>
+
+      <!-- Dirección -->
+      <div class="mb-3">
+        <label for="direccionProveedor" class="form-label fw-semibold text-secondary">
+          <i class="bi bi-geo me-1"></i> Dirección
+        </label>
+        <input type="text" id="direccionProveedor" 
+               class="form-control border-2"
+               [(ngModel)]="proveedorEdit.direccion" name="direccion"
+               maxlength="150"
+               placeholder="Av. Ejemplo 123">
+      </div>
+
+      <!-- Teléfono / Email -->
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label for="telefonoProveedor" class="form-label fw-semibold text-secondary">
+            <i class="bi bi-telephone me-1"></i> Teléfono
+          </label>
+          <input type="text" id="telefonoProveedor" 
+                 class="form-control border-2"
+                 #telefonoField="ngModel"
+                 [class.is-invalid]="telefonoField.invalid && (telefonoField.touched || formProveedor.submitted)"
+                 [(ngModel)]="proveedorEdit.telefono" name="telefono"
+                 pattern="^[0-9+\-\s]{6,15}$"
+                 placeholder="987654321">
+          <div class="invalid-feedback" *ngIf="telefonoField.errors?.['pattern'] && (telefonoField.touched || formProveedor.submitted)">
+            <i class="bi bi-exclamation-circle me-1"></i> Teléfono inválido.
+          </div>
+        </div>
+        <div class="col-6 mb-3">
+          <label for="emailProveedor" class="form-label fw-semibold text-secondary">
+            <i class="bi bi-envelope me-1"></i> Email
+          </label>
+          <input type="email" id="emailProveedor" 
+                 class="form-control border-2"
+                 #emailField="ngModel"
+                 [class.is-invalid]="emailField.invalid && (emailField.touched || formProveedor.submitted)"
+                 [(ngModel)]="proveedorEdit.email" name="email"
+                 email
+                 placeholder="contacto@empresa.com">
+          <div class="invalid-feedback" *ngIf="emailField.errors?.['email'] && (emailField.touched || formProveedor.submitted)">
+            <i class="bi bi-exclamation-circle me-1"></i> Correo inválido.
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto -->
+      <div class="mb-3">
+        <label for="contactoProveedor" class="form-label fw-semibold text-secondary">
+          <i class="bi bi-person me-1"></i> Persona de contacto
+        </label>
+        <input type="text" id="contactoProveedor" 
+               class="form-control border-2"
+               [(ngModel)]="proveedorEdit.contacto" name="contacto"
+               maxlength="100"
+               placeholder="Nombre del representante">
+      </div>
+
+      <!-- Región -->
+      <div class="mb-3">
+        <label for="regionProveedor" class="form-label fw-semibold text-secondary">
+          <i class="bi bi-geo-alt me-1"></i> Región
+        </label>
+        <select id="regionProveedor" class="form-select border-2" 
+                [(ngModel)]="proveedorEdit.region" name="region">
+          <option value="">Seleccionar región</option>
+          <option *ngFor="let region of regiones" [value]="region">{{ region }}</option>
+        </select>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="proveedor-panel-footer">
+    <button type="button" class="btn btn-light btn-lg px-4" [disabled]="guardando" (click)="cerrarModal()">
+      <i class="bi bi-x-circle me-2"></i> Cancelar
+    </button>
+    <button type="button" class="btn btn-success btn-lg px-4" 
+            (click)="guardarProveedor(formProveedor)" 
+            [disabled]="!formProveedor.valid || guardando"
+            style="background-color: #0d9488; border-color: #0d9488;">
+      <span *ngIf="guardando" class="spinner-border spinner-border-sm me-2"></span>
+      <i *ngIf="!guardando" class="bi" [ngClass]="esEdicion ? 'bi-pencil' : 'bi-plus-circle'"></i>
+      {{ guardando ? 'Guardando...' : (esEdicion ? ' Actualizar' : ' Guardar') }}
+    </button>
+  </div>
+
+</div>

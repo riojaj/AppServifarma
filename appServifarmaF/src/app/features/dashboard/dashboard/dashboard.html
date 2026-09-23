@@ -1,0 +1,396 @@
+<!-- ============================================================ -->
+<!-- CONTENEDOR PRINCIPAL                                         -->
+<!-- ============================================================ -->
+<div class="dashboard-shell">
+  <!-- Contenido principal -->
+  <div class="dashboard-main">
+
+    <!-- ============================================================ -->
+    <!-- PANEL ADMIN                                                  -->
+    <!-- ============================================================ -->
+    <ng-container *ngIf="rol === 'ADMIN'">
+
+      <!-- ========================================================== -->
+      <!-- HEADER: Título + Botón Actualizar                         -->
+      <!-- ========================================================== -->
+      <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+        <div>
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-subtitle">Resumen general del sistema</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <!-- Botón Actualizar (moderno) -->
+          <button class="btn-actualizar-modern" (click)="refrescarDatos()" [disabled]="cargando">
+            <i class="bi bi-arrow-clockwise" [ngClass]="{'spin': cargando}"></i>
+            {{ cargando ? 'Actualizando...' : 'Actualizar' }}
+          </button>
+          <!-- Botón Alertas (solo visible en móvil) -->
+          <a routerLink="/alertas" class="btn-alertas-mobile d-md-none">
+            <i class="bi bi-bell-fill"></i>
+            <span class="d-none d-sm-inline">Alertas</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- SPINNER DE CARGA GLOBAL -->
+      <div *ngIf="cargando" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="text-muted mt-2">Cargando datos del dashboard...</p>
+      </div>
+
+      <!-- CONTENIDO PRINCIPAL (solo si no está cargando) -->
+      <ng-container *ngIf="!cargando">
+
+        <!-- ========================================================== -->
+        <!-- ACCIONES RÁPIDAS (ARRIBA, REDUCIDO)                       -->
+        <!-- ========================================================== -->
+        <div class="row g-2 mb-4">
+          <div class="col-12">
+            <div class="panel-card" style="padding: 12px 20px;">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-lightning-fill text-warning" style="font-size:1rem;"></i>
+                <h5 class="panel-title mb-0" style="font-size:0.95rem;">Acciones Rápidas</h5>
+                <span class="badge bg-light text-muted ms-1" style="font-size:0.6rem;">accesos</span>
+              </div>
+
+              <div class="acciones-rapidas-grid" style="gap: 8px;">
+                <a routerLink="/productos" class="accion-btn btn-productos"
+                  style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-box-seam" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Productos</span>
+                  <small style="font-size:0.6rem;">Inventario</small>
+                </a>
+
+                <a routerLink="/lotes" class="accion-btn btn-lotes" style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-cart-plus" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Inventario</span>
+                  <small style="font-size:0.6rem;">Lotes</small>
+                </a>
+
+                <a routerLink="/ventas" class="accion-btn btn-ventas" style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-cart" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Ventas</span>
+                  <small style="font-size:0.6rem;">Registro</small>
+                </a>
+
+                <a routerLink="/reportes" class="accion-btn btn-reportes"
+                  style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-file-earmark-text" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Reportes</span>
+                  <small style="font-size:0.6rem;">Estadísticas</small>
+                </a>
+
+                <a routerLink="/demanda" class="accion-btn btn-demanda" style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-exclamation-diamond-fill" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Demanda</span>
+                  <small style="font-size:0.6rem;">Insatisfecha</small>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- GRÁFICO + TOP PRODUCTOS (con scroll)                     -->
+        <!-- ========================================================== -->
+        <div class="row g-3 mb-4">
+          <div class="col-lg-8">
+            <div class="panel-card h-100">
+              <h5 class="panel-title mb-3">
+                <i class="bi bi-bar-chart-fill text-primary me-2"></i>Ventas Mensuales
+              </h5>
+              <div class="chart-container">
+                <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType">
+                </canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="panel-card h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="panel-title mb-0">
+                  <i class="bi bi-trophy-fill text-warning me-2"></i>Top Productos
+                </h5>
+                <span class="badge bg-warning text-dark rounded-pill">{{ topProductos.length }}</span>
+              </div>
+
+              <div *ngIf="topProductos.length === 0" class="text-center text-muted py-3">
+                <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                Sin datos de rotación
+              </div>
+
+              <div class="top-productos-scroll">
+                <div class="top-product-item" *ngFor="let item of topProductos; let i = index">
+                  <span class="top-product-rank" [ngClass]="{
+                    'rank-1': i === 0,
+                    'rank-2': i === 1,
+                    'rank-3': i === 2
+                  }">{{ i + 1 }}</span>
+                  <span class="top-product-name">{{ item.nombre }}</span>
+                  <span class="top-product-sales">{{ item.cantidad }} <small>unid.</small></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- KPIs (4 tarjetas)                                          -->
+        <!-- ========================================================== -->
+        <div class="row g-3 mb-4">
+          <div class="col-xl-3 col-md-6" *ngFor="let stat of kpis">
+            <div class="kpi-card-modern" [style.border-left-color]="stat.color">
+              <div class="kpi-card-modern-icon" [style.background]="stat.color + '1A'" [style.color]="stat.color">
+                <i class="bi" [ngClass]="stat.icon"></i>
+              </div>
+              <div class="kpi-card-modern-info">
+                <span class="kpi-label">{{ stat.label }}</span>
+                <span class="kpi-value">{{ stat.displayValue }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- VENTAS RECIENTES + STOCK CRÍTICO                           -->
+        <!-- ========================================================== -->
+        <div class="row g-3">
+          <!-- Ventas Recientes (con scroll, muestra ~5) -->
+          <div class="col-lg-8">
+            <div class="panel-card h-100">
+              <div class="ventas-header">
+                <div class="ventas-header-left">
+                  <i class="bi bi-receipt-cutoff text-primary me-2"></i>
+                  <h5 class="panel-title mb-0">Ventas Recientes</h5>
+                </div>
+                <div class="ventas-header-right">
+                  <span class="ventas-badge">{{ ventasRecientes.length }}</span>
+                  <small class="text-muted ms-2">últimas</small>
+                </div>
+              </div>
+
+              <div *ngIf="ventasRecientes.length === 0" class="text-center text-muted py-4">
+                <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                No hay ventas recientes
+              </div>
+
+              <div class="ventas-scroll-container">
+                <div class="venta-row-modern" *ngFor="let venta of ventasRecientes">
+                  <div class="venta-info">
+                    <div class="venta-cliente-modern">{{ venta.cliente }}</div>
+                    <div class="venta-detalles">
+                      <span class="venta-productos">
+                        <i class="bi bi-box-seam me-1"></i>{{ venta.productos }}
+                      </span>
+                      <span class="venta-hora">
+                        <i class="bi bi-clock me-1"></i>{{ venta.hora }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="venta-total-modern">
+                    S/ {{ venta.total | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stock Crítico -->
+          <div class="col-lg-4">
+            <div class="panel-card h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="panel-title mb-0">Stock Crítico</h5>
+                <span class="badge bg-danger rounded-pill">{{ stockCritico.length }}</span>
+              </div>
+
+              <div *ngIf="stockCritico.length === 0" class="text-center text-muted py-3">
+                No hay productos con stock crítico
+              </div>
+
+              <!-- 🔥 CONTENEDOR CON SCROLL (igual que Ventas Recientes) -->
+              <div class="stock-scroll-container">
+                <div class="stock-item" *ngFor="let item of stockCritico">
+                  <div class="stock-top">
+                    <span class="stock-name">{{ item.producto }}</span>
+                    <span class="stock-unid">{{ item.stock }} unid.</span>
+                  </div>
+                  <div class="stock-bar">
+                    <div class="stock-bar-fill" [style.width.%]="(item.stock / item.minimo) * 100"></div>
+                  </div>
+                  <small class="stock-min">Mínimo: {{ item.minimo }} unidades</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </ng-container> <!-- /fin *ngIf="!cargando" -->
+
+    </ng-container> <!-- /PANEL ADMIN -->
+
+    <!-- ============================================================ -->
+    <!-- PANEL VENDEDOR                                               -->
+    <!-- ============================================================ -->
+    <ng-container *ngIf="rol === 'VENDEDOR'">
+
+      <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+        <div>
+          <h2 class="page-title">Panel de Vendedor</h2>
+          <p class="page-subtitle">Accesos rápidos a tus funciones principales</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <!-- Botón Actualizar (moderno) -->
+          <button class="btn-actualizar-modern" (click)="refrescarDatos()" [disabled]="cargando">
+            <i class="bi bi-arrow-clockwise" [ngClass]="{'spin': cargando}"></i>
+            {{ cargando ? 'Actualizando...' : 'Actualizar' }}
+          </button>
+          <!-- Botón Alertas (solo visible en móvil) -->
+          <a routerLink="/alertas" class="btn-alertas-mobile d-md-none">
+            <i class="bi bi-bell-fill"></i>
+            <span class="d-none d-sm-inline">Alertas</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- SPINNER DE CARGA -->
+      <div *ngIf="cargando" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="text-muted mt-2">Cargando datos...</p>
+      </div>
+
+      <ng-container *ngIf="!cargando">
+
+        <!-- ========================================================== -->
+        <!-- ACCIONES RÁPIDAS (misma barra compacta que el admin)      -->
+        <!-- ========================================================== -->
+        <div class="row g-2 mb-4">
+          <div class="col-12">
+            <div class="panel-card" style="padding: 12px 20px;">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-lightning-fill text-warning" style="font-size:1rem;"></i>
+                <h5 class="panel-title mb-0" style="font-size:0.95rem;">Acciones Rápidas</h5>
+                <span class="badge bg-light text-muted ms-1" style="font-size:0.6rem;">accesos</span>
+              </div>
+
+              <div class="acciones-rapidas-grid" style="gap: 8px;">
+                <a routerLink="/productos" class="accion-btn btn-productos"
+                  style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-box-seam" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Productos</span>
+                  <small style="font-size:0.6rem;">Solo consulta</small>
+                </a>
+
+                <a routerLink="/ventas" class="accion-btn btn-ventas" style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-cart" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Ventas</span>
+                  <small style="font-size:0.6rem;">Registrar</small>
+                </a>
+
+                <a routerLink="/lotes" class="accion-btn btn-lotes" style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-cart-plus" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Inventario</span>
+                  <small style="font-size:0.6rem;">Consultar</small>
+                </a>
+
+                <a routerLink="/demanda" class="accion-btn btn-reportes"
+                  style="padding: 10px 8px; border-radius: 10px;">
+                  <i class="bi bi-exclamation-diamond-fill" style="font-size:1.3rem;"></i>
+                  <span style="font-size:0.8rem;">Demanda</span>
+                  <small style="font-size:0.6rem;">Insatisfecha</small>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actividad Reciente: misma estructura moderna que "Ventas Recientes" del admin, mostrando 6 -->
+        <div class="panel-card">
+          <div class="ventas-header">
+            <div class="ventas-header-left">
+              <i class="bi bi-receipt-cutoff text-primary me-2"></i>
+              <h5 class="panel-title mb-0">Actividad Reciente</h5>
+            </div>
+            <div class="ventas-header-right">
+              <span class="ventas-badge">{{ actividadReciente.length }}</span>
+              <small class="text-muted ms-2">últimas</small>
+            </div>
+          </div>
+
+          <div *ngIf="actividadReciente.length === 0" class="text-center text-muted py-4">
+            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+            No hay actividad reciente
+          </div>
+
+          <div class="actividad-scroll-container">
+            <div class="venta-row-modern" *ngFor="let act of actividadReciente">
+              <div class="venta-info">
+                <div class="venta-cliente-modern">{{ act.descripcion }}</div>
+                <div class="venta-detalles">
+                  <span class="venta-productos">
+                    <i class="bi bi-person me-1"></i>{{ act.cliente }}
+                  </span>
+                  <span class="venta-hora">
+                    <i class="bi bi-clock me-1"></i>{{ act.hora }}
+                  </span>
+                </div>
+              </div>
+              <div class="venta-total-modern" [class.venta-total-cero]="act.monto === 0">
+                S/ {{ act.monto | number:'1.2-2' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </ng-container>
+
+    </ng-container>
+
+    <!-- MENSAJE DE ERROR -->
+    <div *ngIf="errorGeneral" class="alert alert-danger mt-3" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ errorGeneral }}
+    </div>
+
+  </div> <!-- /dashboard-main -->
+
+  <!-- ============================================================ -->
+  <!-- PANEL DE ALERTAS LATERAL (compartido para ambos roles)       -->
+  <!-- ============================================================ -->
+  <aside class="dashboard-alerts">
+    <div class="alerts-header d-flex justify-content-between align-items-center">
+      <h5 class="alerts-title mb-0"><i class="bi bi-bell-fill"></i> Alertas</h5>
+      <a routerLink="/alertas" class="btn-ver-todas d-none d-md-inline-flex">
+        Ver todas <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+    <h6 class="alerts-subtitle">Stock Mínimo</h6>
+    <div *ngIf="alertasStock.length === 0" class="text-muted small text-center py-2">
+      Sin alertas de stock
+    </div>
+    <!-- 🔥 SIN SCROLL: solo los últimos 5, sin overflow-y -->
+    <div class="alertas-lista-fija">
+      <div class="alert-card alert-red" *ngFor="let alerta of alertasStock | slice:0:5">
+        <strong>{{ alerta.producto }}</strong>
+        <small>Stock: {{ alerta.stock }} unidades</small>
+      </div>
+    </div>
+
+    <h6 class="alerts-subtitle mt-3">Próximos a Vencer</h6>
+    <div *ngIf="alertasVencimiento.length === 0" class="text-muted small text-center py-2">
+      Sin vencimientos próximos
+    </div>
+    <div class="alertas-lista-fija">
+      <div class="alert-card alert-yellow" *ngFor="let alerta of alertasVencimiento | slice:0:5">
+        <strong>{{ alerta.producto }}</strong>
+        <small>Vence en {{ alerta.dias }} días</small>
+      </div>
+    </div>
+  </aside>
+
+</div> <!-- /dashboard-shell -->
