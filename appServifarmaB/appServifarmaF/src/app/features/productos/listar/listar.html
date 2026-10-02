@@ -1,0 +1,401 @@
+<div class="productos-container">
+  <!-- ======== CABECERA FIJA ======== -->
+  <div class="productos-header">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+      <div>
+        <h2 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Buscador Visual</h2>
+        <p class="text-muted small mb-0">Encuentra productos de forma rápida y visual</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-farma-importar" (click)="abrirModalImportar()" *ngIf="isAdmin">
+          <i class="bi bi-upload me-1"></i> Importar
+        </button>
+        <button class="btn-farma-nuevo" (click)="abrirOffcanvasCrear()" *ngIf="isAdmin">
+          <i class="bi bi-plus-circle me-1"></i> Nuevo
+        </button>
+        <button class="btn-farma-refrescar" (click)="cargarProductos()" [disabled]="cargando">
+          <i class="bi bi-arrow-clockwise" [ngClass]="{'spin': cargando}"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm border-0 rounded-4 p-3 mb-3">
+      <div class="row g-3">
+        <div class="col-md-5">
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0" 
+                   placeholder="Buscar productos por nombre o código de barras..."
+                   [(ngModel)]="filtroTexto" (input)="buscar()">
+            <button class="btn btn-outline-secondary" (click)="limpiarFiltros()" *ngIf="filtroTexto || filtroCategoria || filtroEstado">
+              <i class="bi bi-x-circle"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select shadow-sm" [(ngModel)]="filtroCategoria" (change)="aplicarFiltros()">
+            <option value="">Todas las categorías</option>
+            <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select shadow-sm" [(ngModel)]="filtroEstado" (change)="aplicarFiltros()">
+            <option value="">Todos los estados</option>
+            <option value="con-stock">Con stock</option>
+            <option value="sin-stock">Sin stock</option>
+          </select>
+        </div>
+        <div class="col-md-2 text-md-end">
+          <span class="badge bg-light text-dark p-2 shadow-sm">
+            <i class="bi bi-database me-1"></i> {{ productosFiltrados.length }} productos
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== CONTENIDO SCROLLABLE ======== -->
+  <div class="productos-body">
+    <div *ngIf="cargando" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
+    <div *ngIf="!cargando" class="row g-4">
+      <div *ngIf="productosFiltrados.length === 0" class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-inbox display-4 d-block mb-2"></i>
+        <p>No se encontraron productos</p>
+      </div>
+
+      <div *ngFor="let producto of productosMostrados; trackBy: trackByProductoId" 
+           class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+        <div class="card producto-card shadow-sm border-0 rounded-4 h-100">
+          <div class="producto-imagen-container">
+            <!-- Imagen real del producto -->
+            <img *ngIf="producto.imagen"
+                 [src]="producto.imagen"
+                 [alt]="producto.nombre"
+                 loading="lazy"
+                 class="producto-imagen"
+                 (error)="onImageError($event)">
+            <!-- Ícono de respaldo: se muestra si no hay imagen, o si la imagen falló al cargar -->
+            <div class="placeholder-icon"
+                 [ngClass]="{ 'placeholder-icon-fallback': producto.imagen }"
+                 [style.display]="producto.imagen ? 'none' : 'flex'">
+              <i class="bi bi-capsule"></i>
+            </div>
+            <span class="producto-stock-badge" 
+                  [ngClass]="{
+                    'stock-bajo': (producto.stockActual || 0) <= 5 && (producto.stockActual || 0) > 0,
+                    'sin-stock': (producto.stockActual || 0) === 0
+                  }">
+              {{ producto.stockActual || 0 }} unidades
+            </span>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <h6 class="fw-bold text-truncate" title="{{ producto.nombre }}">{{ producto.nombre }}</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-light text-dark">{{ obtenerNombreCategoria(producto.categoriaId) }}</span>
+              <span class="text-muted small">PROD-{{ producto.id }}</span>
+            </div>
+            <div class="mt-auto">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="producto-precio">{{ producto.precioVentaActual | currency:'S/ ':'symbol':'1.2-2' }}</span>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-farma-detalle" (click)="abrirModalDetalle(producto)" title="Ver detalle">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button *ngIf="isAdmin" class="btn btn-sm btn-farma-editar" (click)="abrirModalEditar(producto.id!)" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button *ngIf="isAdmin" class="btn btn-sm btn-farma-eliminar"
+                          [disabled]="eliminandoId === producto.id"
+                          (click)="eliminar(producto.id!)" title="Eliminar">
+                    <span *ngIf="eliminandoId === producto.id" class="spinner-border spinner-border-sm"></span>
+                    <i *ngIf="eliminandoId !== producto.id" class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!todosCargados && productosFiltrados.length > 0 && !cargando" class="text-center py-3">
+      <div class="spinner-border spinner-border-sm text-secondary" role="status">
+        <span class="visually-hidden">Cargando más...</span>
+      </div>
+      <span class="text-muted small ms-2">Cargando más productos...</span>
+    </div>
+    <div *ngIf="todosCargados && productosFiltrados.length > 0 && !cargando" class="text-center py-3 text-muted small">
+      <i class="bi bi-check-circle me-1"></i> Todos los productos cargados
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- 1. OFFCANVAS CREAR                                         -->
+  <!-- ========================================================== -->
+  <div class="offcanvas-overlay" [class.active]="offcanvasCrearAbierto" (click)="cerrarOffcanvasCrear()"></div>
+  <div class="offcanvas-slide" [class.active]="offcanvasCrearAbierto">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title"><i class="bi bi-plus-circle me-2" style="color:#0d9488;"></i>Nuevo Producto</h5>
+      <button class="offcanvas-close" (click)="cerrarOffcanvasCrear()">&times;</button>
+    </div>
+    <div class="offcanvas-body">
+      <form [formGroup]="formCrear" (ngSubmit)="guardarProducto()">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nombre *</label>
+          <input type="text" class="form-control"
+                 [class.is-invalid]="formCrear.get('nombre')?.invalid && formCrear.get('nombre')?.touched"
+                 formControlName="nombre" placeholder="Ej: Paracetamol 500mg">
+          <div class="invalid-feedback" *ngIf="formCrear.get('nombre')?.invalid && formCrear.get('nombre')?.touched">
+            <i class="bi bi-exclamation-circle me-1"></i> El nombre es obligatorio.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Código de barras</label>
+          <input type="text" class="form-control"
+                 [class.is-invalid]="formCrear.get('codigoBarras')?.invalid && formCrear.get('codigoBarras')?.touched"
+                 formControlName="codigoBarras" placeholder="Ej: 7891234567890" inputmode="numeric">
+          <div class="invalid-feedback" *ngIf="formCrear.get('codigoBarras')?.errors?.['pattern'] && formCrear.get('codigoBarras')?.touched">
+            <i class="bi bi-exclamation-circle me-1"></i> Debe ser solo números, entre 6 y 14 dígitos.
+          </div>
+          <small class="text-muted">Ingresa el número exacto tal como aparece en el empaque.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Principio activo</label>
+          <input type="text" class="form-control" formControlName="principioActivo" placeholder="Ej: Paracetamol">
+        </div>
+
+        <!-- ======== SECCIÓN DE IMAGEN ======== -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Imagen</label>
+
+          <div class="mb-2">
+            <label class="btn btn-outline-secondary w-100" style="border-radius: 30px;">
+              <i class="bi bi-upload me-1"></i> Seleccionar imagen
+              <input type="file" accept="image/*" 
+                     style="display: none;" 
+                     (change)="onImagenSeleccionada($event)">
+            </label>
+            <small class="text-muted d-block mt-1">Formatos: JPG, PNG, GIF, WEBP (máx. 5 MB)</small>
+          </div>
+
+          <div *ngIf="imagenPrevisualizacion" class="position-relative mb-2 imagen-preview-wrapper">
+            <img [src]="imagenPrevisualizacion" class="img-fluid rounded-4 imagen-preview">
+            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
+                    style="border-radius:50%;width:28px;height:28px;padding:0;"
+                    (click)="limpiarImagenSeleccionada()">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+
+          <div class="d-flex align-items-center my-2">
+            <hr class="flex-grow-1">
+            <span class="mx-2 text-muted small">o</span>
+            <hr class="flex-grow-1">
+          </div>
+
+          <div>
+            <label class="form-label fw-semibold">URL de imagen</label>
+            <input type="text" class="form-control" formControlName="imagen" placeholder="https://ejemplo.com/imagen.jpg">
+            <small class="text-muted">Pega una URL si la imagen ya está en internet</small>
+          </div>
+        </div>
+
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" formControlName="esGenerico" id="esGenericoCrear">
+          <label class="form-check-label" for="esGenericoCrear">Es genérico</label>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Precio compra (S/) *</label>
+            <input type="number" class="form-control" formControlName="precioCompraActual" step="0.01" min="0.01">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Precio venta (S/) *</label>
+            <input type="number" class="form-control" formControlName="precioVentaActual" step="0.01" min="0.01">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Stock mínimo *</label>
+          <input type="number" class="form-control" formControlName="stockMinimo" min="1">
+          <small class="text-muted">El stock inicial/actual se gestiona desde Inventario, no aquí.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Categoría</label>
+          <select class="form-select" formControlName="categoriaId">
+            <option [value]="null">Sin categoría</option>
+            <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Fabricante</label>
+          <select class="form-select" formControlName="fabricanteId">
+            <option [value]="null">Sin fabricante</option>
+            <option *ngFor="let f of fabricantes" [value]="f.id">{{ f.nombre }}</option>
+          </select>
+        </div>
+        <button class="btn btn-primary w-100" style="background-color:#0d9488;border-color:#0d9488;" 
+                type="submit" [disabled]="enviandoCrear || formCrear.invalid">
+          <span *ngIf="enviandoCrear" class="spinner-border spinner-border-sm me-1"></span>
+          {{ enviandoCrear ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- 2. MODAL EDITAR                                            -->
+  <!-- ========================================================== -->
+  <div class="offcanvas-overlay" [class.active]="modalEditarAbierto" (click)="cerrarModalEditar()"></div>
+  <div class="offcanvas-slide" [class.active]="modalEditarAbierto">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title"><i class="bi bi-pencil-square me-2" style="color:#f59e0b;"></i>Editar Producto</h5>
+      <button class="offcanvas-close" (click)="cerrarModalEditar()">&times;</button>
+    </div>
+    <div class="offcanvas-body">
+      <form [formGroup]="formEditar" (ngSubmit)="actualizarProducto()">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nombre *</label>
+          <input type="text" class="form-control"
+                 [class.is-invalid]="formEditar.get('nombre')?.invalid && formEditar.get('nombre')?.touched"
+                 formControlName="nombre">
+          <div class="invalid-feedback" *ngIf="formEditar.get('nombre')?.invalid && formEditar.get('nombre')?.touched">
+            <i class="bi bi-exclamation-circle me-1"></i> El nombre es obligatorio.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Código de barras</label>
+          <input type="text" class="form-control"
+                 [class.is-invalid]="formEditar.get('codigoBarras')?.invalid && formEditar.get('codigoBarras')?.touched"
+                 formControlName="codigoBarras" inputmode="numeric">
+          <div class="invalid-feedback" *ngIf="formEditar.get('codigoBarras')?.errors?.['pattern'] && formEditar.get('codigoBarras')?.touched">
+            <i class="bi bi-exclamation-circle me-1"></i> Debe ser solo números, entre 6 y 14 dígitos.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Principio activo</label>
+          <input type="text" class="form-control" formControlName="principioActivo">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Imagen (URL)</label>
+          <input type="text" class="form-control" formControlName="imagen">
+        </div>
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" formControlName="esGenerico" id="esGenericoEditar">
+          <label class="form-check-label" for="esGenericoEditar">Es genérico</label>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Precio compra (S/) *</label>
+            <input type="number" class="form-control" formControlName="precioCompraActual" step="0.01" min="0.01">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Precio venta (S/) *</label>
+            <input type="number" class="form-control" formControlName="precioVentaActual" step="0.01" min="0.01">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Stock mínimo *</label>
+          <input type="number" class="form-control" formControlName="stockMinimo" min="1">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Categoría</label>
+          <select class="form-select" formControlName="categoriaId">
+            <option [value]="null">Sin categoría</option>
+            <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Fabricante</label>
+          <select class="form-select" formControlName="fabricanteId">
+            <option [value]="null">Sin fabricante</option>
+            <option *ngFor="let f of fabricantes" [value]="f.id">{{ f.nombre }}</option>
+          </select>
+        </div>
+        <button class="btn btn-primary w-100" style="background-color:#f59e0b;border-color:#f59e0b;" 
+                type="submit" [disabled]="enviandoEditar || formEditar.invalid">
+          <span *ngIf="enviandoEditar" class="spinner-border spinner-border-sm me-1"></span>
+          {{ enviandoEditar ? 'Actualizando...' : 'Actualizar' }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- 3. MODAL DETALLE                                           -->
+  <!-- ========================================================== -->
+  <div class="offcanvas-overlay" [class.active]="modalDetalleAbierto" (click)="cerrarModalDetalle()"></div>
+  <div class="offcanvas-slide" [class.active]="modalDetalleAbierto">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title"><i class="bi bi-info-circle me-2" style="color:#3b82f6;"></i>Detalle del Producto</h5>
+      <button class="offcanvas-close" (click)="cerrarModalDetalle()">&times;</button>
+    </div>
+    <div class="offcanvas-body" *ngIf="productoDetalle">
+      <div class="text-center mb-3">
+        <img *ngIf="productoDetalle.imagen"
+             [src]="productoDetalle.imagen"
+             class="img-fluid rounded-4 imagen-detalle"
+             (error)="onImageError($event)">
+        <div class="placeholder-icon" *ngIf="!productoDetalle.imagen" style="height:150px;">
+          <i class="bi bi-capsule" style="font-size: 3rem;"></i>
+        </div>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between"><strong>Nombre</strong>{{ productoDetalle.nombre }}</li>
+        <li class="list-group-item d-flex justify-content-between"><strong>Código</strong>{{ productoDetalle.codigoBarras || '—' }}</li>
+        <li class="list-group-item d-flex justify-content-between"><strong>Categoría</strong>{{ obtenerNombreCategoria(productoDetalle.categoriaId) }}</li>
+        <li class="list-group-item d-flex justify-content-between"><strong>Fabricante</strong>{{ obtenerNombreFabricante(productoDetalle.fabricanteId) }}</li>
+        <li class="list-group-item d-flex justify-content-between"><strong>Precio</strong>{{ productoDetalle.precioVentaActual | currency:'S/ ':'symbol':'1.2-2' }}</li>
+        <li class="list-group-item d-flex justify-content-between"><strong>Stock</strong>{{ productoDetalle.stockActual || 0 }}</li>
+        <li class="list-group-item d-flex justify-content-between"><strong>Stock mínimo</strong>{{ productoDetalle.stockMinimo || 0 }}</li>
+        <li class="list-group-item d-flex justify-content-between"><strong>Genérico</strong>{{ productoDetalle.esGenerico ? 'Sí' : 'No' }}</li>
+      </ul>
+      <button class="btn btn-success w-100 mt-3" style="background-color:#0d9488;border-color:#0d9488;">
+        <i class="bi bi-cart-plus me-1"></i> Agregar a venta
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- 4. MODAL IMPORTAR                                          -->
+  <!-- ========================================================== -->
+  <div class="offcanvas-overlay" [class.active]="modalImportarAbierto" (click)="cerrarModalImportar()"></div>
+  <div class="offcanvas-slide" [class.active]="modalImportarAbierto">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title"><i class="bi bi-upload me-2" style="color:#f59e0b;"></i>Importar Productos</h5>
+      <button class="offcanvas-close" (click)="cerrarModalImportar()">&times;</button>
+    </div>
+    <div class="offcanvas-body">
+      <p class="text-muted">Sube un archivo Excel (.xlsx) o CSV para importar productos masivamente.</p>
+      <button class="btn btn-outline-primary w-100 mb-3" (click)="descargarPlantilla()">
+        <i class="bi bi-download me-1"></i> Descargar plantilla
+      </button>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Seleccionar archivo</label>
+        <input type="file" class="form-control" accept=".xlsx,.csv" (change)="onArchivoSeleccionado($event)">
+      </div>
+      <button class="btn btn-primary w-100" style="background-color:#0d9488;border-color:#0d9488;" 
+              (click)="importarProductos()" [disabled]="importando || !archivoImportar">
+        <span *ngIf="importando" class="spinner-border spinner-border-sm me-1"></span>
+        {{ importando ? 'Importando...' : 'Importar' }}
+      </button>
+      <div *ngIf="resultadoImportacion" class="mt-3">
+        <div class="alert alert-success" *ngIf="resultadoImportacion.importados > 0">
+          ✅ {{ resultadoImportacion.importados }} productos importados
+        </div>
+        <div class="alert alert-danger" *ngIf="resultadoImportacion.errores > 0">
+          ❌ {{ resultadoImportacion.errores }} errores
+          <div *ngFor="let err of resultadoImportacion.erroresDetalle" class="small text-muted">
+            Fila {{ err.fila }}: {{ err.mensaje }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

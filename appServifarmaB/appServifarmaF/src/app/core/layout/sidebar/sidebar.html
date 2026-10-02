@@ -1,0 +1,95 @@
+<div class="sidebar">
+  <!-- Logo -->
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <img src="logoServifarma.jpeg" alt="ServiFarma">
+    </div>
+    <span class="brand-text">ServiFarma</span>
+  </div>
+
+  <!-- Usuario -->
+  <div class="sidebar-user">
+    <i class="bi bi-person-circle"></i>
+    <div>
+      <div class="user-name">{{ nombreCompleto }}</div>
+      <small class="user-role">{{ rol }}</small>
+    </div>
+  </div>
+
+  <!-- Menú de navegación -->
+  <nav class="sidebar-nav">
+
+    <!-- ===== SECCIÓN PRINCIPAL (todos) ===== -->
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
+    </a>
+
+    <a routerLink="/movimientos-stock" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-arrow-left-right"></i> <span>Movimientos de Stock</span>
+    </a>
+
+    <a routerLink="/clientes" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-person-badge"></i> <span>Clientes</span>
+    </a>
+
+    <a routerLink="/caja" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-cash-stack"></i> <span>Caja</span>
+    </a>
+
+    <a routerLink="/bitacora" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-journal-text"></i> <span>Comunicaciones</span>
+    </a>
+
+    <!-- ========================================== -->
+    <!-- ✅ FABRICANTES (visible para TODOS)       -->
+    <!-- ========================================== -->
+    <a routerLink="/fabricantes" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-building"></i> <span>Fabricantes</span>
+    </a>
+
+    <!-- ========================================== -->
+    <!-- SOLO ADMINISTRADOR                        -->
+    <!-- ========================================== -->
+    <ng-container *ngIf="isAdmin">
+
+      <!-- Categorías (solo admin) -->
+      <a routerLink="/categorias" routerLinkActive="active" class="nav-item">
+        <i class="bi bi-tags"></i> <span>Categorías</span>
+      </a>
+
+      <!-- Proveedores (solo admin) -->
+      <a routerLink="/proveedores" routerLinkActive="active" class="nav-item">
+        <i class="bi bi-truck"></i> <span>Proveedores</span>
+      </a>
+
+      <!-- Estadísticas (solo admin) -->
+      <a routerLink="/estadisticas" routerLinkActive="active" class="nav-item">
+        <i class="bi bi-graph-up"></i> <span>Estadísticas</span>
+      </a>
+
+      <!-- Rentabilidad (solo admin) -->
+      <a routerLink="/reportes" routerLinkActive="active" class="nav-item">
+        <i class="bi bi-file-earmark-text"></i> <span>Reportes</span>
+      </a>
+      <!-- Auditoría (solo admin) -->
+      <a routerLink="/auditoria" routerLinkActive="active" class="nav-item">
+        <i class="bi bi-shield-check"></i> <span>Auditoría</span>
+      </a>
+
+      <!-- Usuarios (solo admin) -->
+      <a routerLink="/usuarios" routerLinkActive="active" class="nav-item">
+        <i class="bi bi-people-fill"></i> <span>Usuarios</span>
+      </a>
+
+      <a routerLink="/configuracion/seguridad" routerLinkActive="active" class="nav-item">
+        <i class="bi bi-gear-fill"></i> <span>Configuración</span>
+      </a>
+    </ng-container>
+
+  </nav>
+
+  <!-- Cerrar Sesión (siempre visible) -->
+  <button class="nav-item logout-item" (click)="logout()">
+    <i class="bi bi-box-arrow-right"></i> <span>Cerrar Sesión</span>
+  </button>
+</div>
