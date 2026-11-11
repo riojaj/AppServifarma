@@ -266,3 +266,33 @@ INSERT INTO parametros_sistema (clave, valor, descripcion) VALUES
 ('smtp.auth', 'true', 'Autenticación SMTP'),
 ('smtp.starttls', 'true', 'Habilitar STARTTLS');
 
+
+
+
+-- =====================================================================
+-- SCRIPT DE ACTUALIZACIÓN PARA RF31 (Compras y recepción de lotes)
+-- =====================================================================
+
+-- 1. Agregar la columna numero_factura a la tabla lotes.
+-- Se coloca después de 'lote' para mantener el orden lógico.
+-- Se permite NULL porque los lotes antiguos no tienen factura registrada.
+ALTER TABLE lotes 
+ADD COLUMN numero_factura VARCHAR(50) NULL AFTER lote;
+
+-- 2. Crear un índice único compuesto (proveedor_id + numero_factura).
+-- Esto garantiza a nivel de Base de Datos que no se pueda registrar 
+-- la misma factura dos veces para el mismo proveedor.
+-- NOTA: En MySQL, los valores NULL no se consideran duplicados en un índice UNIQUE, 
+-- por lo que los lotes antiguos (con factura NULL) no darán error.
+ALTER TABLE lotes 
+ADD CONSTRAINT uk_proveedor_factura UNIQUE (proveedor_id, numero_factura);
+
+-- =====================================================================
+-- FIN DEL SCRIPT
+-- =====================================================================
+
+DESCRIBE lotes;
+
+
+
+
