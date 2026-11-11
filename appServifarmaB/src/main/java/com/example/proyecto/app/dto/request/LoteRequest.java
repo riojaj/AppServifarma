@@ -28,12 +28,16 @@ public class LoteRequest {
     @Size(max = 50, message = "El número de lote no puede exceder los 50 caracteres")
     private String lote;
 
+    // ✅ NUEVO: Número de factura
+    @Size(max = 50, message = "El número de factura no puede exceder los 50 caracteres")
+    private String numeroFactura;
+
+    // ✅ NUEVO: Bandera para que un admin autorice lotes con vencimiento menor a 6 meses
+    private Boolean autorizarVencimientoCorto;
+
     @NotNull(message = "La fecha de ingreso es obligatoria")
     private LocalDate fechaIngreso;
 
-    // NOTA: se quitó @Future de aquí porque este DTO se reutiliza en actualizarLote().
-    // La validación de "debe ser futura" ahora se hace SOLO en LoteServiceImpl.crearLote(),
-    // así se puede editar un lote ya vencido sin que la validación lo rechace.
     @NotNull(message = "La fecha de vencimiento es obligatoria")
     private LocalDate fechaVencimiento;
 

@@ -100,6 +100,8 @@
             <th style="width:60px;">Imagen</th>
             <th>Producto</th>
             <th>Lote</th>
+            <!-- ✅ NUEVO: Columna de Factura -->
+            <th>Factura</th>
             <th class="text-center">Stock</th>
             <th>Vencimiento</th>
             <th>Estado</th>
@@ -108,7 +110,8 @@
         </thead>
         <tbody>
           <tr *ngIf="lotesFiltrados.length === 0">
-            <td colspan="7" class="text-center py-4 text-muted">
+            <!-- ✅ NUEVO: Colspan ajustado a 8 -->
+            <td colspan="8" class="text-center py-4 text-muted">
               <i class="bi bi-inbox display-6 d-block mb-2"></i>
               No hay lotes que coincidan con los filtros
             </td>
@@ -127,6 +130,13 @@
             </td>
             <!-- Lote -->
             <td><span class="badge bg-light text-dark">{{ lote.lote }}</span></td>
+            <!-- ✅ NUEVO: Factura -->
+            <td>
+              <span class="badge bg-light text-dark" *ngIf="lote.numeroFactura; else sinFactura">
+                {{ lote.numeroFactura }}
+              </span>
+              <ng-template #sinFactura><span class="text-muted small">-</span></ng-template>
+            </td>
             <!-- Stock -->
             <td class="text-center">
               <span class="fw-bold" [ngClass]="{
@@ -190,6 +200,8 @@
             <div class="flex-grow-1">
               <div class="fw-bold">{{ getProductoNombre(lote.productoId) }}</div>
               <div class="text-muted small">Lote: {{ lote.lote }}</div>
+              <!-- ✅ NUEVO: Factura en móvil -->
+              <div class="text-muted small" *ngIf="lote.numeroFactura">Factura: {{ lote.numeroFactura }}</div>
               <div class="d-flex gap-3 mt-1">
                 <span class="badge" [ngClass]="getEstadoBadge(lote.estado || 'activo')">{{ lote.estado }}</span>
                 <span class="fw-bold" [ngClass]="{
@@ -291,22 +303,39 @@
           </div>
         </div>
 
+        <!-- ✅ NUEVO: Número de Factura -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Número de Factura / Guía</label>
+          <input type="text" class="form-control" formControlName="numeroFactura" placeholder="Ej: F001-000123">
+          <div class="form-text text-muted small">Opcional. Evita registrar la misma factura dos veces.</div>
+        </div>
+
         <!-- Fechas -->
         <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label fw-semibold required">Fecha Ingreso</label>
-            <!-- Campo de solo lectura con la fecha actual -->
             <input type="text" class="form-control" [value]="fechaIngresoActual" readonly
               style="background-color: #e9ecef; cursor: default;">
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold required">Fecha Vencimiento</label>
-            <input type="date" class="form-control" formControlName="fechaVencimiento">
+            <!-- ✅ NUEVO: Evento change para evaluar -->
+            <input type="date" class="form-control" formControlName="fechaVencimiento" (change)="evaluarVencimientoCorto()">
+          </div>
+        </div>
+
+        <!-- ✅ NUEVO: Checkbox de Autorización -->
+        <div class="alert alert-warning mt-3 py-2" *ngIf="mostrarAutorizacion">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" formControlName="autorizarVencimientoCorto" id="checkAutorizacion">
+            <label class="form-check-label small fw-semibold" for="checkAutorizacion">
+              Autorizo el registro de este lote con vencimiento menor a 6 meses (Solo Admin).
+            </label>
           </div>
         </div>
 
         <!-- Cantidad y Precios -->
-        <div class="mb-3">
+        <div class="mb-3 mt-3">
           <label class="form-label fw-semibold required">Cantidad</label>
           <input type="number" class="form-control" formControlName="cantidad" min="1">
           <div class="invalid-feedback"
@@ -440,6 +469,11 @@
         <div class="col-6">
           <label class="text-muted small">Lote</label>
           <div class="fw-semibold">{{ loteDetalle.lote }}</div>
+        </div>
+        <!-- ✅ NUEVO: Factura en detalle -->
+        <div class="col-6">
+          <label class="text-muted small">Factura</label>
+          <div class="fw-semibold">{{ loteDetalle.numeroFactura || '-' }}</div>
         </div>
         <div class="col-6">
           <label class="text-muted small">Cantidad</label>

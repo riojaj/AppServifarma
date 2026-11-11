@@ -36,6 +36,7 @@ export class ListarComponent implements OnInit, OnDestroy {
   // ======== ESTADOS ========
   cargando: boolean = false;
   isAdmin: boolean = false;
+  mostrarAutorizacion: boolean = false; // ✅ NUEVO: Controla si se muestra el checkbox
   private destroy$ = new Subject<void>();
 
   // ======== PAGINACIÓN (SCROLL INFINITO) ========
@@ -83,7 +84,7 @@ export class ListarComponent implements OnInit, OnDestroy {
   modalDetalleAbierto: boolean = false;
   loteDetalle: Lote | null = null;
 
-  // ======== REFERENCIAS A ELEMENTOS (para scroll infinito en modales) ========
+  // ======== REFERENCIAS A ELEMENTOS ========
   @ViewChild('productosScroll') productosScroll!: ElementRef;
   @ViewChild('proveedoresScroll') proveedoresScroll!: ElementRef;
 
@@ -97,11 +98,13 @@ export class ListarComponent implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {
-    // ===== FORMULARIO CREAR (sin fechaIngreso, se asigna automáticamente) =====
+    // ===== FORMULARIO CREAR =====
     this.formCrear = this.fb.group({
       productoId: [null, Validators.required],
       proveedorId: [null, Validators.required],
       lote: ['', [Validators.required, Validators.maxLength(50)]],
+      numeroFactura: ['', [Validators.maxLength(50)]], // ✅ NUEVO CAMPO
+      autorizarVencimientoCorto: [false], // ✅ NUEVO CAMPO
       fechaVencimiento: ['', Validators.required],
       cantidad: [1, [Validators.required, Validators.min(1)]],
       precioCompra: [0, [Validators.required, Validators.min(0.01)]],
@@ -419,6 +422,29 @@ export class ListarComponent implements OnInit, OnDestroy {
     return Math.ceil((venc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
   }
 
+  // ✅ NUEVO: Evalúa si el lote vence en menos de 6 meses
+  evaluarVencimientoCorto() {
+    const fechaVenc = this.formCrear.get('fechaVencimiento')?.value;
+    if (!fechaVenc) {
+      this.mostrarAutorizacion = false;
+      this.formCrear.patchValue({ autorizarVencimientoCorto: false });
+      return;
+    }
+
+    const hoy = new Date();
+    const vencimiento = new Date(fechaVenc);
+    const seisMesesDespues = new Date();
+    seisMesesDespues.setMonth(seisMesesDespues.getMonth() + 6);
+
+    // Si la fecha de vencimiento es menor a hoy + 6 meses, mostramos el checkbox (solo si es admin)
+    if (vencimiento < seisMesesDespues && this.isAdmin) {
+      this.mostrarAutorizacion = true;
+    } else {
+      this.mostrarAutorizacion = false;
+      this.formCrear.patchValue({ autorizarVencimientoCorto: false });
+    }
+  }
+
   getEstadoBadge(estado: string): string {
     const map: Record<string, string> = {
       'activo': 'bg-success text-white',
@@ -568,7 +594,7 @@ export class ListarComponent implements OnInit, OnDestroy {
   }
 
   // ============================================================
-  // OFFCANVAS CREAR (con auto-generación de lote y fecha)
+  // OFFCANVAS CREAR
   // ============================================================
   abrirOffcanvasCrear(): void {
     const hoy = new Date();
@@ -594,12 +620,16 @@ export class ListarComponent implements OnInit, OnDestroy {
       productoId: null,
       proveedorId: null,
       lote: loteGenerado,
+      numeroFactura: '', // ✅ NUEVO
+      autorizarVencimientoCorto: false, // ✅ NUEVO
       fechaVencimiento: '',
       cantidad: 1,
       precioCompra: 0,
       precioVenta: 0,
       usuarioId: usuarioValido
     });
+    
+    this.mostrarAutorizacion = false; // ✅ NUEVO
 
     // Actualizar fechas por si cambió el día
     this.actualizarFechas();

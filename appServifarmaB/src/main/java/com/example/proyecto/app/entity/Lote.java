@@ -36,6 +36,10 @@ public class Lote {
     @Column(length = 50, nullable = false)
     private String lote;
 
+    // ✅ NUEVO CAMPO AGREGADO PARA RF31
+    @Column(name = "numero_factura", length = 50)
+    private String numeroFactura;
+
     @Column(name = "fecha_ingreso", nullable = false)
     private LocalDate fechaIngreso;
 
@@ -71,7 +75,6 @@ public class Lote {
     @OneToMany(mappedBy = "lote")
     private List<DetalleVenta> detalleVentas;
 
-    // Enum anidado para el estado del lote
     public enum EstadoLote {
         activo,
         deteriorado,

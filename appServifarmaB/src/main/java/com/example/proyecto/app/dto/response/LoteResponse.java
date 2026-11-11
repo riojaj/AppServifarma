@@ -18,6 +18,7 @@ public class LoteResponse {
 
     private Integer id;
     private String lote;
+    private String numeroFactura; // ✅ NUEVO
     private LocalDate fechaIngreso;
     private LocalDate fechaVencimiento;
     private Integer cantidad;
@@ -27,11 +28,9 @@ public class LoteResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Datos del producto (mapeados desde Producto en LoteMapper)
     private Integer productoId;
     private String productoNombre;
 
-    // Datos del proveedor (mapeados desde Proveedor en LoteMapper)
     private Integer proveedorId;
     private String proveedorRazonSocial;
     

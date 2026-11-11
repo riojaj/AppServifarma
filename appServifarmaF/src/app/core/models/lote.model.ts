@@ -3,6 +3,8 @@ export interface Lote {
   productoId: number;
   proveedorId: number;
   lote: string;
+  numeroFactura?: string; // ✅ NUEVO
+  autorizarVencimientoCorto?: boolean; // ✅ NUEVO (solo para el request)
   fechaIngreso: string; // Date en string (ISO)
   fechaVencimiento: string;
   cantidad: number;

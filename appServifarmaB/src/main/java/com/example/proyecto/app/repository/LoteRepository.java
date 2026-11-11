@@ -1,6 +1,5 @@
 package com.example.proyecto.app.repository;
 
-
 import com.example.proyecto.app.entity.Lote;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -15,6 +14,16 @@ import java.util.Optional;
 
 @Repository
 public interface LoteRepository extends JpaRepository<Lote, Integer> {
+
+    // ==============================
+    // ✅ NUEVO: VALIDACIÓN DE FACTURA (RF31)
+    // ==============================
+    
+    /**
+     * Verifica si ya existe un lote registrado con el mismo número de factura 
+     * para el mismo proveedor. Evita duplicidad de facturas.
+     */
+    boolean existsByProveedorIdAndNumeroFactura(Integer proveedorId, String numeroFactura);
 
     // ==============================
     // MÉTODOS PARA LÓGICA FEFO
