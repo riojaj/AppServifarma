@@ -1,5 +1,6 @@
 package com.example.proyecto.app.service.impl;
 
+import com.example.proyecto.app.entity.BitacoraComunicacion;
 import com.example.proyecto.app.entity.Caja;
 import com.example.proyecto.app.entity.MovimientoStock;
 import com.example.proyecto.app.entity.Venta;
@@ -27,6 +28,7 @@ public class AuditoriaServiceImpl implements AuditoriaService {
     private final CajaRepository cajaRepository;
     private final UsuarioRepository usuarioRepository;
     private final LoteRepository loteRepository;
+    private final BitacoraComunicacionRepository bitacoraComunicacionRepository; // <-- NUEVO
 
     // ==============================
     // AUDITORÍA DE MOVIMIENTOS DE STOCK
@@ -155,7 +157,7 @@ public class AuditoriaServiceImpl implements AuditoriaService {
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("cajaId", caja.getId());
                 item.put("fechaApertura", caja.getFechaApertura());
-                item.put("fechaCierre", caja.getFechaCierre());  // <-- CORREGIDO: antes era "fechaCierra"
+                item.put("fechaCierre", caja.getFechaCierre());
                 item.put("totalVentas", totalVentas);
                 item.put("montoDeclarado", caja.getMontoCierreDeclarado());
                 item.put("diferencia", diferencia);
@@ -164,7 +166,7 @@ public class AuditoriaServiceImpl implements AuditoriaService {
             }
         }
 
-        resultado.sort(Comparator.comparing(m -> (LocalDateTime) m.get("fechaCierre"), Comparator.reverseOrder())); // CORREGIDO
+        resultado.sort(Comparator.comparing(m -> (LocalDateTime) m.get("fechaCierre"), Comparator.reverseOrder()));
         return resultado;
     }
 
@@ -205,5 +207,42 @@ public class AuditoriaServiceImpl implements AuditoriaService {
         resumen.put("totalCajasCerradas", totalCajas);
 
         return resumen;
+    }
+
+    // ==============================
+    // NUEVOS MÉTODOS PARA LA T7 (BITÁCORA DE AUDITORÍA)
+    // ==============================
+
+    @Override
+    @Transactional
+    public void registrarEvento(Integer usuarioId, String modulo, String accion, String detalle) {
+        log.info("Registrando evento de auditoría: [{}] {} - {}", modulo, accion, detalle);
+        
+        BitacoraComunicacion logEvent = new BitacoraComunicacion();
+        
+        // Buscamos el usuario por ID y lo asignamos al objeto
+        usuarioRepository.findById(usuarioId).ifPresent(logEvent::setUsuario);
+
+        logEvent.setFechaHora(LocalDateTime.now());
+        logEvent.setMensaje("[" + modulo + "] " + accion + ": " + detalle);
+        
+        // Usamos el Enum correcto (el que acabamos de actualizar en el Paso 1)
+        logEvent.setTipo(BitacoraComunicacion.Tipo.auditoria); 
+
+        logEvent.setLeido(false);
+        
+        bitacoraComunicacionRepository.save(logEvent);
+    }
+
+    @Override
+    public List<BitacoraComunicacion> obtenerEventosAuditoria(LocalDateTime inicio, LocalDateTime fin) {
+        log.debug("Obteniendo eventos de auditoría entre {} y {}", inicio, fin);
+        
+        // Buscamos usando el Enum correcto
+        return bitacoraComunicacionRepository.findByTipoAndFechaHoraBetween(
+                BitacoraComunicacion.Tipo.auditoria, inicio, fin)
+                .stream()
+                .sorted(Comparator.comparing(BitacoraComunicacion::getFechaHora).reversed())
+                .collect(Collectors.toList());
     }
 }

@@ -1,5 +1,6 @@
 package com.example.proyecto.app.service;
 
+import com.example.proyecto.app.entity.BitacoraComunicacion;
 import com.example.proyecto.app.entity.MovimientoStock;
 import com.example.proyecto.app.entity.Venta;
 
@@ -101,4 +102,30 @@ public interface AuditoriaService {
      * @return Map con las métricas de actividad.
      */
     Map<String, Object> obtenerResumenActividad(LocalDateTime inicio, LocalDateTime fin);
+
+    // ==============================
+    // NUEVOS MÉTODOS PARA LA T7 (BITÁCORA DE AUDITORÍA)
+    // ==============================
+
+    /**
+     * Registra un evento de auditoría en la base de datos.
+     * Este método será llamado desde otros servicios (Ventas, Productos, Caja, etc.)
+     * cuando ocurra una acción crítica en el sistema.
+     * 
+     * @param usuarioId ID del usuario que realiza la acción.
+     * @param modulo Módulo del sistema donde ocurrió la acción (ej. "VENTAS", "INVENTARIO").
+     * @param accion Tipo de acción realizada (ej. "CREAR", "ANULAR", "ACTUALIZAR").
+     * @param detalle Descripción detallada del evento.
+     */
+    void registrarEvento(Integer usuarioId, String modulo, String accion, String detalle);
+
+    /**
+     * Obtiene la lista de eventos de auditoría en un rango de fechas.
+     * Este método será consumido por el frontend para mostrar la tabla de auditoría.
+     * 
+     * @param inicio Fecha y hora de inicio.
+     * @param fin Fecha y hora de fin.
+     * @return Lista de BitacoraComunicacion (eventos de auditoría).
+     */
+    List<BitacoraComunicacion> obtenerEventosAuditoria(LocalDateTime inicio, LocalDateTime fin);
 }

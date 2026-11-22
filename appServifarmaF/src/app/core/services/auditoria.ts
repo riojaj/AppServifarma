@@ -13,7 +13,8 @@ import {
   CajaDiferencia,
   HistorialCaja,
   ResumenActividad,
-  UsuarioBasico
+  UsuarioBasico,
+  EventoAuditoria // <-- NUEVO MODELO AGREGADO
 } from '../models/auditoria.model';
 
 @Injectable({
@@ -119,6 +120,22 @@ export class AuditoriaService {
       .set('inicio', inicio)
       .set('fin', fin);
     return this.http.get<ResumenActividad>(`${this.apiUrl}/resumen-actividad`, { params })
+      .pipe(catchError(this.handleError));
+  }
+
+  // ============================================================
+  // NUEVOS MÉTODOS PARA LA T7 (BITÁCORA DE AUDITORÍA)
+  // ============================================================
+
+  /**
+   * Obtiene los eventos de auditoría generales (creación, anulación, etc.) 
+   * registrados en la bitácora del sistema.
+   */
+  obtenerEventosAuditoria(inicio: string, fin: string): Observable<EventoAuditoria[]> {
+    const params = new HttpParams()
+      .set('inicio', inicio)
+      .set('fin', fin);
+    return this.http.get<EventoAuditoria[]>(`${this.apiUrl}/eventos`, { params })
       .pipe(catchError(this.handleError));
   }
 

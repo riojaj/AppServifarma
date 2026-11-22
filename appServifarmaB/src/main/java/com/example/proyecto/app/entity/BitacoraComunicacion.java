@@ -48,6 +48,7 @@ public class BitacoraComunicacion {
     public enum Tipo {
         novedad,
         recordatorio,
-        incidencia
+        incidencia,
+        auditoria
     }
 }

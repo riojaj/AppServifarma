@@ -1,5 +1,6 @@
 package com.example.proyecto.app.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // <-- NUEVO IMPORT
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,5 +32,6 @@ public class Rol {
 
     // Relación con Usuario (para completar la entidad)
     @OneToMany(mappedBy = "rol")
+    @JsonIgnore 
     private List<Usuario> usuarios;
 }

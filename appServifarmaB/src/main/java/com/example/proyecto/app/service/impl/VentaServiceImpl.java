@@ -9,7 +9,7 @@ import com.example.proyecto.app.exception.*;
 import com.example.proyecto.app.mapper.DetalleVentaMapper;
 import com.example.proyecto.app.mapper.VentaMapper;
 import com.example.proyecto.app.repository.*;
-import com.example.proyecto.app.service.BitacoraComunicacionService;
+import com.example.proyecto.app.service.AuditoriaService; // <-- NUEVO IMPORT
 import com.example.proyecto.app.service.InventarioService;
 import com.example.proyecto.app.service.VentaService;
 import com.example.proyecto.app.util.SecurityUtils;
@@ -41,7 +41,7 @@ public class VentaServiceImpl implements VentaService {
     private final InventarioService inventarioService;
     private final VentaMapper ventaMapper;
     private final DetalleVentaMapper detalleVentaMapper;
-    private final BitacoraComunicacionService bitacoraService;
+    private final AuditoriaService auditoriaService; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
     private final SecurityUtils securityUtils;
 
     // ==============================
@@ -146,29 +146,24 @@ public class VentaServiceImpl implements VentaService {
         log.info("Venta registrada exitosamente. ID: {}, Total: {}", ventaFinal.getId(), totalVenta);
 
         // ==============================================================
-        // CREAR MENSAJE EN BITÁCORA
+        // REGISTRO EN AUDITORÍA (T7)
         // ==============================================================
         try {
             String clienteInfo = (cliente != null) ? " - Cliente: " + cliente.getNombre() : " - Cliente: General";
-            String mensaje = String.format(
-                    "🛒 Venta registrada - Total: S/ %.2f - Usuario: %s %s - Medio de pago: %s",
+            String detalle = String.format(
+                    "Venta ID: %d - Total: S/ %.2f - Usuario: %s %s - Pago: %s",
+                    ventaFinal.getId(),
                     totalVenta,
                     usuario.getUsuario(),
                     clienteInfo,
                     request.getMedioPago().name()
             );
-
-            com.example.proyecto.app.dto.request.BitacoraComunicacionRequest bitacoraRequest =
-                    com.example.proyecto.app.dto.request.BitacoraComunicacionRequest.builder()
-                            .usuarioId(usuario.getId())
-                            .mensaje(mensaje)
-                            .tipo(BitacoraComunicacion.Tipo.novedad)
-                            .build();
-
-            bitacoraService.crearMensaje(bitacoraRequest);
-            log.info("Mensaje de bitácora creado para venta ID: {}", ventaFinal.getId());
+            
+            // Llamamos a nuestro nuevo método de auditoría
+            auditoriaService.registrarEvento(usuario.getId(), "VENTAS", "REGISTRAR_VENTA", detalle);
+            
         } catch (Exception e) {
-            log.error("Error al crear mensaje en bitácora para venta: {}", e.getMessage());
+            log.error("Error al registrar evento de auditoría para venta: {}", e.getMessage());
         }
 
         return ventaMapper.toResponse(ventaFinal);
@@ -188,36 +183,27 @@ public class VentaServiceImpl implements VentaService {
             throw new VentaAnuladaException("La venta ya se encuentra anulada.");
         }
 
-        // Opcional: Aquí se podría revertir el stock, pero la lógica de negocio puede no requerirlo.
         venta.setEstado(Venta.EstadoVenta.anulada);
         ventaRepository.save(venta);
 
         log.info("Venta anulada: ID {}", id);
 
         // ==============================================================
-        // CREAR MENSAJE EN BITÁCORA
+        // REGISTRO EN AUDITORÍA (T7)
         // ==============================================================
         try {
-            // Obtener usuario autenticado o usar sistema
             Integer usuarioId = getUsuarioId();
-
-            String mensaje = String.format(
-                    "🚫 Venta anulada - ID: %d - Total: S/ %.2f",
+            String detalle = String.format(
+                    "Se anuló la Venta ID: %d - Monto: S/ %.2f",
                     id,
                     venta.getTotal()
             );
 
-            com.example.proyecto.app.dto.request.BitacoraComunicacionRequest bitacoraRequest =
-                    com.example.proyecto.app.dto.request.BitacoraComunicacionRequest.builder()
-                            .usuarioId(usuarioId)
-                            .mensaje(mensaje)
-                            .tipo(BitacoraComunicacion.Tipo.incidencia)
-                            .build();
-
-            bitacoraService.crearMensaje(bitacoraRequest);
-            log.info("Mensaje de bitácora creado para anulación de venta ID: {}", id);
+            // Llamamos a nuestro nuevo método de auditoría
+            auditoriaService.registrarEvento(usuarioId, "VENTAS", "ANULAR_VENTA", detalle);
+            
         } catch (Exception e) {
-            log.error("Error al crear mensaje en bitácora para anulación de venta: {}", e.getMessage());
+            log.error("Error al registrar evento de auditoría para anulación de venta: {}", e.getMessage());
         }
     }
 
@@ -317,7 +303,6 @@ public class VentaServiceImpl implements VentaService {
         if (inicio.isAfter(fin)) {
             throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
         }
-        // Nota: Este método requiere una consulta personalizada en VentaRepository.
         throw new UnsupportedOperationException("Método pendiente de implementar: obtenerTotalVentasPorMedioPagoYPeriodo");
     }
     
@@ -337,7 +322,6 @@ public class VentaServiceImpl implements VentaService {
             throw new ResourceNotFoundException("El cliente no tiene ventas para eliminar.");
         }
 
-        // Obtener nombre del cliente para el mensaje (opcional)
         String nombreCliente = "Cliente ID: " + clienteId;
         try {
             Cliente cliente = clienteRepository.findById(clienteId).orElse(null);
@@ -352,27 +336,21 @@ public class VentaServiceImpl implements VentaService {
         log.info("Se eliminaron {} ventas del cliente ID: {}", ventas.size(), clienteId);
 
         // ==============================================================
-        // CREAR MENSAJE EN BITÁCORA
+        // REGISTRO EN AUDITORÍA (T7)
         // ==============================================================
         try {
             Integer usuarioId = getUsuarioId();
-            String mensaje = String.format(
-                    "🗑️ Eliminación masiva de ventas - Cliente: %s - Cantidad: %d",
+            String detalle = String.format(
+                    "Eliminación masiva de ventas - Cliente: %s - Cantidad de ventas: %d",
                     nombreCliente,
                     ventas.size()
             );
 
-            com.example.proyecto.app.dto.request.BitacoraComunicacionRequest bitacoraRequest =
-                    com.example.proyecto.app.dto.request.BitacoraComunicacionRequest.builder()
-                            .usuarioId(usuarioId)
-                            .mensaje(mensaje)
-                            .tipo(BitacoraComunicacion.Tipo.incidencia)
-                            .build();
+            // Llamamos a nuestro nuevo método de auditoría
+            auditoriaService.registrarEvento(usuarioId, "VENTAS", "ELIMINACION_MASIVA", detalle);
 
-            bitacoraService.crearMensaje(bitacoraRequest);
-            log.info("Mensaje de bitácora creado para eliminación masiva de ventas del cliente ID: {}", clienteId);
         } catch (Exception e) {
-            log.error("Error al crear mensaje en bitácora para eliminación de ventas: {}", e.getMessage());
+            log.error("Error al registrar evento de auditoría para eliminación de ventas: {}", e.getMessage());
         }
     }
 

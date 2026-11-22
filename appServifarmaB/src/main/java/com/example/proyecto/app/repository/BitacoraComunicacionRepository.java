@@ -42,4 +42,6 @@ public interface BitacoraComunicacionRepository extends JpaRepository<BitacoraCo
      * Obtiene los mensajes más recientes (ordenados por fecha descendente).
      */
     List<BitacoraComunicacion> findAllByOrderByFechaHoraDesc();
+
+    List<BitacoraComunicacion> findByTipoAndFechaHoraBetween(BitacoraComunicacion.Tipo tipo, LocalDateTime inicio, LocalDateTime fin);
 }

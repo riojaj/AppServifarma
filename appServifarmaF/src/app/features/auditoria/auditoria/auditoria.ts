@@ -1,8 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuditoriaService} from '../../../core/services/auditoria';
-import { ResumenActividad } from '../../../core/models/auditoria.model';
+import { AuditoriaService } from '../../../core/services/auditoria';
+import { ResumenActividad, EventoAuditoria } from '../../../core/models/auditoria.model'; // <-- Importamos EventoAuditoria
 import { UsuarioService } from '../../../core/services/usuario';
 import { Usuario } from '../../../core/models/usuario.model';
 import { AuthService } from '../../../core/auth';
@@ -135,87 +135,64 @@ export class AuditoriaComponent implements OnInit {
     });
   }
 
+  // ========== CARGAR REGISTROS (NUEVA LÓGICA T7) ==========
   private cargarRegistros(inicio: string, fin: string): Promise<void> {
     return new Promise((resolve) => {
-      // Combinar ventas anuladas y movimientos de stock
-      Promise.all([
-        this.auditoriaService.obtenerVentasAnuladas(inicio, fin).toPromise(),
-        this.auditoriaService.obtenerMovimientosPorTipo('venta', inicio, fin).toPromise(),
-        this.auditoriaService.obtenerMovimientosPorTipo('merma', inicio, fin).toPromise()
-      ]).then(([ventasAnuladas, ventasStock, mermas]) => {
-        const registros: any[] = [];
+      // Consumimos el nuevo endpoint unificado que creamos en el backend
+      this.auditoriaService.obtenerEventosAuditoria(inicio, fin).subscribe({
+        next: (eventos: EventoAuditoria[]) => {
+          const registros: any[] = [];
 
-        // Mapear ventas anuladas
-        (ventasAnuladas || []).forEach((v: any) => {
-          const usuarioNombre = this.getNombreUsuario(v.usuarioId);
-          registros.push({
-            id: v.id,
-            usuario: usuarioNombre || 'Usuario #' + v.usuarioId,
-            usuarioId: v.usuarioId,
-            accion: 'Venta anulada',
-            fecha: v.fecha?.split('T')[0] || '',
-            hora: v.fecha?.split('T')[1]?.substring(0, 8) || '',
-            modulo: 'Ventas',
-            detalle: `Total: S/ ${v.total?.toFixed(2) || '0.00'}`
+          eventos.forEach((evento) => {
+            // Extraemos el módulo y la acción del mensaje guardado en el backend
+            // Formato guardado: "[MODULO] ACCION: detalle"
+            let modulo = 'Sistema';
+            let accion = 'Evento';
+            let detalle = evento.mensaje;
+
+            const match = evento.mensaje.match(/^\[(.*?)\]\s(.*?):\s(.*)$/);
+            if (match) {
+              modulo = match[1];
+              accion = match[2];
+              detalle = match[3];
+            }
+
+            // Formatear fecha y hora
+            const fechaStr = evento.fechaHora || new Date().toISOString();
+            
+            registros.push({
+              id: evento.id,
+              usuario: evento.usuario?.nombreCompleto || evento.usuario?.usuario || 'Usuario #' + (evento.usuario?.id || '?'),
+              usuarioId: evento.usuario?.id || 1,
+              accion: accion.replace(/_/g, ' '), // Reemplaza guiones bajos por espacios (ej. REGISTRAR_VENTA -> REGISTRAR VENTA)
+              fecha: fechaStr.split('T')[0],
+              hora: fechaStr.split('T')[1]?.substring(0, 8) || '',
+              modulo: modulo,
+              detalle: detalle
+            });
           });
-        });
 
-        // Mapear movimientos de stock (ventas)
-        (ventasStock || []).forEach((m: any) => {
-          const usuarioNombre = this.getNombreUsuario(m.usuarioId);
-          registros.push({
-            id: m.id,
-            usuario: usuarioNombre || 'Usuario #' + m.usuarioId,
-            usuarioId: m.usuarioId,
-            accion: 'Movimiento de stock (venta)',
-            fecha: m.fecha?.split('T')[0] || '',
-            hora: m.fecha?.split('T')[1]?.substring(0, 8) || '',
-            modulo: 'Inventario',
-            detalle: `Cantidad: ${m.cantidad} | Costo unitario: S/ ${m.costoUnitario?.toFixed(2) || '0.00'}`
+          // Ordenar por fecha y hora descendente
+          registros.sort((a, b) => {
+            const fechaA = new Date(a.fecha + 'T' + a.hora);
+            const fechaB = new Date(b.fecha + 'T' + b.hora);
+            return fechaB.getTime() - fechaA.getTime();
           });
-        });
 
-        // Mapear mermas
-        (mermas || []).forEach((m: any) => {
-          const usuarioNombre = this.getNombreUsuario(m.usuarioId);
-          const perdida = (m.costoUnitario || 0) * (m.cantidad || 0);
-          registros.push({
-            id: m.id,
-            usuario: usuarioNombre || 'Usuario #' + m.usuarioId,
-            usuarioId: m.usuarioId,
-            accion: 'Merma registrada',
-            fecha: m.fecha?.split('T')[0] || '',
-            hora: m.fecha?.split('T')[1]?.substring(0, 8) || '',
-            modulo: 'Inventario',
-            detalle: `Cantidad: ${m.cantidad} | Pérdida: S/ ${perdida.toFixed(2)}`
-          });
-        });
-
-        // Ordenar por fecha descendente
-        registros.sort((a, b) => {
-          const fechaA = new Date(a.fecha + 'T' + a.hora);
-          const fechaB = new Date(b.fecha + 'T' + b.hora);
-          return fechaB.getTime() - fechaA.getTime();
-        });
-
-        this.registros = registros;
-        this.aplicarFiltros();
-        this.paginaActual = 1;
-        this.hayDatos = this.registros.length > 0;
-        resolve();
-      }).catch(err => {
-        console.error('Error al cargar registros:', err);
-        this.registros = [];
-        this.aplicarFiltros();
-        resolve();
+          this.registros = registros;
+          this.aplicarFiltros();
+          this.paginaActual = 1;
+          this.hayDatos = this.registros.length > 0;
+          resolve();
+        },
+        error: (err) => {
+          console.error('Error al cargar eventos de auditoría:', err);
+          this.registros = [];
+          this.aplicarFiltros();
+          resolve();
+        }
       });
     });
-  }
-
-  // ========== OBTENER NOMBRE DE USUARIO DESDE LA LISTA REAL ==========
-  private getNombreUsuario(usuarioId: number): string | null {
-    const found = this.usuarios.find(u => u.id === usuarioId);
-    return found ? found.nombre : null;
   }
 
   // ========== FILTROS ==========
@@ -232,7 +209,8 @@ export class AuditoriaComponent implements OnInit {
       filtrados = filtrados.filter(r =>
         r.accion.toLowerCase().includes(busqueda) ||
         r.modulo.toLowerCase().includes(busqueda) ||
-        r.usuario.toLowerCase().includes(busqueda)
+        r.usuario.toLowerCase().includes(busqueda) ||
+        r.detalle.toLowerCase().includes(busqueda) // Añadimos búsqueda por detalle
       );
     }
 

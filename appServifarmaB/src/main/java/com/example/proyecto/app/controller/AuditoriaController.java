@@ -1,5 +1,6 @@
 package com.example.proyecto.app.controller;
 
+import com.example.proyecto.app.entity.BitacoraComunicacion;
 import com.example.proyecto.app.entity.MovimientoStock;
 import com.example.proyecto.app.entity.Venta;
 import com.example.proyecto.app.service.AuditoriaService;
@@ -147,5 +148,22 @@ public class AuditoriaController {
         log.debug("Solicitud de resumen de actividad entre {} y {}", inicio, fin);
         Map<String, Object> resumen = auditoriaService.obtenerResumenActividad(inicio, fin);
         return ResponseEntity.ok(resumen);
+    }
+
+    // ==============================
+    // NUEVOS ENDPOINTS PARA LA T7 (BITÁCORA DE AUDITORÍA)
+    // ==============================
+
+    @GetMapping("/eventos")
+    @Operation(summary = "Obtiene los eventos de auditoría generales",
+               description = "Retorna la bitácora de eventos del sistema (creación, anulación, etc.) en un rango de fechas")
+    public ResponseEntity<List<BitacoraComunicacion>> obtenerEventosAuditoria(
+            @Parameter(description = "Fecha y hora de inicio (formato: yyyy-MM-ddTHH:mm:ss)", example = "2025-06-01T00:00:00")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+            @Parameter(description = "Fecha y hora de fin (formato: yyyy-MM-ddTHH:mm:ss)", example = "2025-06-30T23:59:59")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
+        log.debug("Solicitud de eventos de auditoría entre {} y {}", inicio, fin);
+        List<BitacoraComunicacion> eventos = auditoriaService.obtenerEventosAuditoria(inicio, fin);
+        return ResponseEntity.ok(eventos);
     }
 }

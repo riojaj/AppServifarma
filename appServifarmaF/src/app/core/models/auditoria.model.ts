@@ -70,3 +70,17 @@ export interface UsuarioBasico {
   id: number;
   nombre: string;
 }
+
+/** Evento de auditoría general (Bitácora) - T7 */
+export interface EventoAuditoria {
+  id: number;
+  usuario: {
+    id: number;
+    nombreCompleto: string;
+    usuario: string;
+  } | null; // Porque puede venir nulo o con la relación cargada
+  fechaHora: string;
+  mensaje: string;
+  tipo: string;
+  leido: boolean;
+}

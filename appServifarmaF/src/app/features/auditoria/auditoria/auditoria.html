@@ -4,102 +4,121 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
     <div>
       <h2 class="fw-bold mb-0" style="color: #1a1a2e;">
-        <i class="bi bi-shield-check" style="color: #3b82f6;"></i> Auditoría del Sistema
+        <i class="bi bi-shield-check text-primary me-2"></i> Auditoría del Sistema
       </h2>
       <p class="text-muted small mb-0" style="font-weight: 400;">
-        Registro de todas las acciones realizadas en el sistema
+        Registro histórico de todas las acciones críticas realizadas en el sistema
       </p>
     </div>
-    <button class="btn-farma-refrescar" (click)="cargarDatos()" [disabled]="cargando">
-      <i class="bi bi-arrow-clockwise" [ngClass]="{'spin': cargando}"></i>
-      {{ cargando ? 'Cargando...' : 'Actualizar' }}
+    <button class="btn-farma-refrescar shadow-sm" (click)="cargarDatos()" [disabled]="cargando">
+      <i class="bi bi-arrow-clockwise me-1" [ngClass]="{'spin': cargando}"></i>
+      {{ cargando ? 'Actualizando...' : 'Actualizar Datos' }}
     </button>
   </div>
 
   <!-- ======== RESUMEN DE ACTIVIDAD (KPIs) ======== -->
   <div *ngIf="!cargando && resumen" class="row g-3 mb-4">
-    <div class="col-md-2">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body text-center p-2">
-          <i class="bi bi-cash-stack display-6" style="color: #3b82f6;"></i>
-          <h6 class="text-muted mt-1">Total Ventas</h6>
-          <h5 class="fw-bold">{{ resumen.totalVentas | currency:'S/ ':'symbol':'1.2-2' }}</h5>
+    <!-- KPI 1 -->
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="card kpi-card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body text-center p-3">
+          <div class="icon-box bg-primary-subtle text-primary mb-2 mx-auto">
+            <i class="bi bi-cash-stack fs-4"></i>
+          </div>
+          <h6 class="text-muted small mb-1">Total Ventas</h6>
+          <h5 class="fw-bold mb-0 text-dark">{{ resumen.totalVentas | currency:'S/ ':'symbol':'1.2-2' }}</h5>
         </div>
       </div>
     </div>
-    <div class="col-md-2">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body text-center p-2">
-          <i class="bi bi-receipt display-6" style="color: #f59e0b;"></i>
-          <h6 class="text-muted mt-1">Transacciones</h6>
-          <h5 class="fw-bold">{{ resumen.totalTransacciones | number }}</h5>
+    <!-- KPI 2 -->
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="card kpi-card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body text-center p-3">
+          <div class="icon-box bg-warning-subtle text-warning mb-2 mx-auto">
+            <i class="bi bi-receipt fs-4"></i>
+          </div>
+          <h6 class="text-muted small mb-1">Transacciones</h6>
+          <h5 class="fw-bold mb-0 text-dark">{{ resumen.totalTransacciones | number }}</h5>
         </div>
       </div>
     </div>
-    <div class="col-md-2">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body text-center p-2">
-          <i class="bi bi-x-circle display-6" style="color: #ef4444;"></i>
-          <h6 class="text-muted mt-1">Anuladas</h6>
-          <h5 class="fw-bold">{{ resumen.totalAnuladas | number }}</h5>
+    <!-- KPI 3 -->
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="card kpi-card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body text-center p-3">
+          <div class="icon-box bg-danger-subtle text-danger mb-2 mx-auto">
+            <i class="bi bi-x-circle fs-4"></i>
+          </div>
+          <h6 class="text-muted small mb-1">Anuladas</h6>
+          <h5 class="fw-bold mb-0 text-dark">{{ resumen.totalAnuladas | number }}</h5>
         </div>
       </div>
     </div>
-    <div class="col-md-2">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body text-center p-2">
-          <i class="bi bi-arrow-left-right display-6" style="color: #3b82f6;"></i>
-          <h6 class="text-muted mt-1">Mov. Stock</h6>
-          <h5 class="fw-bold">{{ resumen.totalMovimientosStock | number }}</h5>
+    <!-- KPI 4 -->
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="card kpi-card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body text-center p-3">
+          <div class="icon-box bg-info-subtle text-info mb-2 mx-auto">
+            <i class="bi bi-arrow-left-right fs-4"></i>
+          </div>
+          <h6 class="text-muted small mb-1">Mov. Stock</h6>
+          <h5 class="fw-bold mb-0 text-dark">{{ resumen.totalMovimientosStock | number }}</h5>
         </div>
       </div>
     </div>
-    <div class="col-md-2">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body text-center p-2">
-          <i class="bi bi-cash display-6" style="color: #8b5cf6;"></i>
-          <h6 class="text-muted mt-1">Cajas Cerradas</h6>
-          <h5 class="fw-bold">{{ resumen.totalCajasCerradas | number }}</h5>
+    <!-- KPI 5 -->
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="card kpi-card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body text-center p-3">
+          <div class="icon-box bg-purple-subtle text-purple mb-2 mx-auto" style="color: #8b5cf6; background-color: #f5f3ff;">
+            <i class="bi bi-cash fs-4"></i>
+          </div>
+          <h6 class="text-muted small mb-1">Cajas Cerradas</h6>
+          <h5 class="fw-bold mb-0 text-dark">{{ resumen.totalCajasCerradas | number }}</h5>
         </div>
       </div>
     </div>
-    <div class="col-md-2">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body text-center p-2">
-          <i class="bi bi-tags display-6" style="color: #ec4899;"></i>
-          <h6 class="text-muted mt-1">Mermas</h6>
-          <h5 class="fw-bold">{{ (resumen.movimientosPorTipo && resumen.movimientosPorTipo['merma']) || 0 | number }}</h5>
+    <!-- KPI 6 -->
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="card kpi-card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body text-center p-3">
+          <div class="icon-box bg-pink-subtle text-pink mb-2 mx-auto" style="color: #ec4899; background-color: #fdf2f8;">
+            <i class="bi bi-tags fs-4"></i>
+          </div>
+          <h6 class="text-muted small mb-1">Mermas</h6>
+          <h5 class="fw-bold mb-0 text-dark">{{ (resumen.movimientosPorTipo && resumen.movimientosPorTipo['merma']) || 0 | number }}</h5>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ======== FILTROS ======== -->
-  <div class="card shadow-sm border-0 rounded-4 p-3 mb-4" style="border-left: 4px solid #3b82f6;">
+  <div class="card shadow-sm border-0 rounded-4 p-3 mb-4 filter-card">
     <div class="row g-3 align-items-end">
       <div class="col-md-3">
-        <label class="form-label fw-semibold small">Usuario</label>
-        <select class="form-select" [(ngModel)]="usuarioFiltro" (change)="aplicarFiltros()">
+        <label class="form-label fw-semibold small text-secondary">Usuario</label>
+        <select class="form-select form-select-sm" [(ngModel)]="usuarioFiltro" (change)="aplicarFiltros()">
           <option value="todos">Todos los usuarios</option>
           <option *ngFor="let u of usuarios" [value]="u.id">{{ u.nombre }}</option>
         </select>
       </div>
       <div class="col-md-3">
-        <label class="form-label fw-semibold small">Acción</label>
-        <input type="text" class="form-control" [(ngModel)]="accionFiltro" (input)="aplicarFiltros()" placeholder="Buscar acción...">
+        <label class="form-label fw-semibold small text-secondary">Acción / Módulo</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" class="form-control" [(ngModel)]="accionFiltro" (input)="aplicarFiltros()" placeholder="Buscar acción, módulo...">
+        </div>
       </div>
-      <div class="col-md-3">
-        <label class="form-label fw-semibold small">Fecha Inicio</label>
-        <input type="date" class="form-control" [(ngModel)]="fechaInicio">
+      <div class="col-md-2">
+        <label class="form-label fw-semibold small text-secondary">Fecha Inicio</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaInicio">
       </div>
-      <div class="col-md-3">
-        <label class="form-label fw-semibold small">Fecha Fin</label>
-        <input type="date" class="form-control" [(ngModel)]="fechaFin">
+      <div class="col-md-2">
+        <label class="form-label fw-semibold small text-secondary">Fecha Fin</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaFin">
       </div>
-    </div>
-    <div class="row mt-3">
-      <div class="col-md-12 text-end">
-        <button class="btn btn-primary" style="background-color: #3b82f6; border-color: #3b82f6;" (click)="cargarDatos()" [disabled]="cargando">
+      <div class="col-md-2">
+        <button class="btn btn-primary btn-sm w-100 fw-semibold" (click)="cargarDatos()" [disabled]="cargando">
           <i class="bi bi-funnel me-1"></i> Filtrar
         </button>
       </div>
@@ -107,74 +126,121 @@
   </div>
 
   <!-- ======== SPINNER ======== -->
-  <div *ngIf="cargando" class="text-center py-3">
-    <div class="spinner-border text-primary" role="status">
+  <div *ngIf="cargando" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
       <span class="visually-hidden">Cargando...</span>
     </div>
+    <p class="text-muted mt-3">Cargando registros de auditoría...</p>
   </div>
 
   <!-- ======== TABLA DE REGISTROS ======== -->
   <div *ngIf="!cargando" class="card shadow-sm border-0 rounded-4">
-    <div class="card-body">
-      <div *ngIf="registrosFiltrados.length === 0" class="text-center py-4 text-muted">
-        <i class="bi bi-inbox display-4 d-block mb-2"></i>
-        <p>No hay registros de auditoría para los filtros seleccionados</p>
+    <div class="card-body p-0">
+      <div *ngIf="registrosFiltrados.length === 0" class="text-center py-5 text-muted">
+        <i class="bi bi-inbox display-4 d-block mb-3 text-secondary opacity-50"></i>
+        <h5 class="fw-semibold">No hay registros</h5>
+        <p class="mb-0">No se encontraron acciones de auditoría para los filtros seleccionados.</p>
       </div>
 
-      <div *ngIf="registrosFiltrados.length > 0">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Acción</th>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Módulo</th>
-                <th>Detalle</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let registro of registrosPagina">
-                <td><span class="fw-semibold">{{ registro.usuario }}</span></td>
-                <td>{{ registro.accion }}</td>
-                <td>{{ registro.fecha | date:'dd/MM/yyyy' }}</td>
-                <td>{{ registro.hora }}</td>
-                <td><span class="badge bg-light text-dark">{{ registro.modulo }}</span></td>
-                <td><small class="text-muted">{{ registro.detalle || '' }}</small></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- ======== PAGINACIÓN ======== -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <div>
-            <span class="text-muted small">
-              Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} -
-              {{ Math.min(paginaActual * itemsPorPagina, registrosFiltrados.length) }}
-              de {{ registrosFiltrados.length }} registros
-            </span>
-          </div>
-          <div class="btn-group shadow-sm">
-            <button class="btn btn-outline-secondary btn-sm" (click)="anteriorPagina()" [disabled]="paginaActual === 1">
-              <i class="bi bi-chevron-left"></i> Anterior
-            </button>
-            <button class="btn btn-outline-secondary btn-sm" (click)="siguientePagina()" [disabled]="paginaActual === totalPaginas">
-              Siguiente <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
-        </div>
+      <div *ngIf="registrosFiltrados.length > 0" class="table-responsive">
+        <table class="table table-hover align-middle mb-0 custom-table">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">Usuario</th>
+              <th>Acción</th>
+              <th>Fecha / Hora</th>
+              <th>Módulo</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let registro of registrosPagina">
+              <!-- Usuario -->
+              <td class="ps-4">
+                <div class="d-flex align-items-center">
+                  <div class="avatar-circle me-2">
+                    {{ registro.usuario.charAt(0) | uppercase }}
+                  </div>
+                  <div>
+                    <span class="fw-semibold d-block text-dark" style="font-size: 0.9rem;">{{ registro.usuario }}</span>
+                    <small class="text-muted" style="font-size: 0.75rem;">ID: {{ registro.usuarioId }}</small>
+                  </div>
+                </div>
+              </td>
+              <!-- Acción con Badge de color dinámico -->
+              <td>
+                <span class="badge action-badge" [ngClass]="{
+                  'bg-success-subtle text-success border-success': registro.accion.includes('REGISTRAR') || registro.accion.includes('CREAR'),
+                  'bg-danger-subtle text-danger border-danger': registro.accion.includes('ANULAR') || registro.accion.includes('ELIMINAR'),
+                  'bg-warning-subtle text-warning border-warning': registro.accion.includes('ACTUALIZAR') || registro.accion.includes('EDITAR'),
+                  'bg-primary-subtle text-primary border-primary': registro.accion.includes('CERRAR') || registro.accion.includes('ABRIR'),
+                  'bg-secondary-subtle text-secondary border-secondary': !registro.accion.includes('REGISTRAR') && !registro.accion.includes('CREAR') && !registro.accion.includes('ANULAR') && !registro.accion.includes('ELIMINAR') && !registro.accion.includes('ACTUALIZAR') && !registro.accion.includes('EDITAR') && !registro.accion.includes('CERRAR') && !registro.accion.includes('ABRIR')
+                }">
+                  {{ registro.accion }}
+                </span>
+              </td>
+              <!-- Fecha y Hora -->
+              <td>
+                <div class="d-flex flex-column">
+                  <span class="fw-medium text-dark" style="font-size: 0.85rem;">{{ registro.fecha | date:'dd MMM yyyy' }}</span>
+                  <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ registro.hora }}</small>
+                </div>
+              </td>
+              <!-- Módulo -->
+              <td>
+                <span class="badge module-badge">
+                  <i class="bi" [ngClass]="{
+                    'bi-cart': registro.modulo === 'VENTAS',
+                    'bi-box-seam': registro.modulo === 'INVENTARIO' || registro.modulo === 'PRODUCTOS',
+                    'bi-person': registro.modulo === 'USUARIOS',
+                    'bi-safe': registro.modulo === 'CAJA',
+                    'bi-gear': registro.modulo === 'SISTEMA'
+                  }"></i>
+                  {{ registro.modulo }}
+                </span>
+              </td>
+              <!-- Detalle -->
+              <td>
+                <span class="text-muted small d-inline-block text-truncate" style="max-width: 250px;" [title]="registro.detalle">
+                  {{ registro.detalle || 'Sin detalle adicional' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- ======== PAGINACIÓN ======== -->
+    <div *ngIf="registrosFiltrados.length > 0" class="card-footer bg-white border-top-0 d-flex flex-wrap justify-content-between align-items-center py-3 px-4 rounded-bottom-4">
+      <div>
+        <span class="text-muted small">
+          Mostrando <strong>{{ (paginaActual - 1) * itemsPorPagina + 1 }}</strong> -
+          <strong>{{ Math.min(paginaActual * itemsPorPagina, registrosFiltrados.length) }}</strong>
+          de <strong>{{ registrosFiltrados.length }}</strong> registros
+        </span>
+      </div>
+      <div class="btn-group shadow-sm mt-2 mt-sm-0">
+        <button class="btn btn-outline-secondary btn-sm px-3" (click)="anteriorPagina()" [disabled]="paginaActual === 1">
+          <i class="bi bi-chevron-left"></i> Anterior
+        </button>
+        <button class="btn btn-outline-secondary btn-sm px-3" (click)="siguientePagina()" [disabled]="paginaActual === totalPaginas">
+          Siguiente <i class="bi bi-chevron-right"></i>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- ======== INFORMACIÓN ======== -->
-  <div class="alert alert-info mt-3" role="alert" style="background-color: #eff6ff; border-color: #3b82f6;">
-    <i class="bi bi-info-circle me-2" style="color: #3b82f6;"></i>
-    <strong>Información de Auditoría:</strong>
-    Todos los registros de auditoría se almacenan en una permanencia y no pueden ser modificados.
-    La auditoría es crucial para el cumplimiento normativo y la seguridad del sistema.
+  <div class="alert alert-info mt-4 d-flex align-items-center rounded-4 shadow-sm border-0" role="alert" style="background-color: #eff6ff;">
+    <i class="bi bi-shield-lock-fill fs-4 me-3" style="color: #3b82f6;"></i>
+    <div>
+      <h6 class="fw-bold mb-1" style="color: #1e3a8a;">Información de Auditoría</h6>
+      <p class="mb-0 small" style="color: #1e40af;">
+        Todos los registros de auditoría se almacenan de forma permanente y no pueden ser modificados ni eliminados. 
+        La auditoría es crucial para el cumplimiento normativo y la seguridad del sistema.
+      </p>
+    </div>
   </div>
 
 </div>
