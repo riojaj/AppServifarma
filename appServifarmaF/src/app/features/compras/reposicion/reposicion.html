@@ -1,0 +1,130 @@
+<div class="container-fluid mt-4">
+
+  <!-- ======== ENCABEZADO ======== -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-0" style="color: #1a1a2e;">
+        <i class="bi bi-box-seam text-primary me-2"></i> Reposición Sugerida
+      </h2>
+      <p class="text-muted small mb-0" style="font-weight: 400;">
+        Sugerencias de compra basadas en el historial de ventas (90 días) y demanda insatisfecha.
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary shadow-sm" routerLink="/ordenes-compra">
+        <i class="bi bi-receipt me-1"></i> Ver órdenes de compra
+      </button>
+      <button class="btn btn-primary shadow-sm" (click)="generarOrden()"
+              [disabled]="productosAComprar === 0 || cargando || generando">
+        <span *ngIf="generando" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!generando" class="bi bi-file-earmark-check me-1"></i>
+        {{ generando ? 'Generando…' : 'Convertir a Orden de Compra' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ======== SPINNER ======== -->
+  <div *ngIf="cargando" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+    <p class="text-muted mt-3">Calculando reposición sugerida...</p>
+  </div>
+
+  <!-- ======== TABLA ======== -->
+  <div *ngIf="!cargando" class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-0">
+
+      <div *ngIf="sugerencias.length === 0" class="text-center py-5 text-muted">
+        <i class="bi bi-check-circle display-4 d-block mb-3 text-success"></i>
+        <h5 class="fw-semibold">¡Todo en orden!</h5>
+        <p class="mb-0">Ningún producto está en el stock mínimo o por debajo. No hay nada que reponer hoy.</p>
+      </div>
+
+      <div *ngIf="sugerencias.length > 0" class="table-responsive">
+        <table class="table table-hover align-middle mb-0 custom-table">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">Producto</th>
+              <th class="text-center">Stock Actual</th>
+              <th class="text-center">Stock Mín.</th>
+              <th class="text-center">Prom. Venta</th>
+              <th class="text-center">Cant. Sugerida</th>
+              <th>Proveedor</th>
+              <th class="text-end">Precio Est.</th>
+              <th class="text-end pe-4">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of sugerencias; trackBy: trackByProducto">
+              <td class="ps-4 fw-semibold text-dark">{{ item.nombreProducto }}</td>
+
+              <td class="text-center">
+                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger">
+                  {{ item.stockActual }}
+                </span>
+              </td>
+
+              <td class="text-center text-muted">{{ item.stockMinimo }}</td>
+
+              <td class="text-center">
+                <span class="fw-medium">{{ item.promedioDiario }}</span> <small class="text-muted">u/d</small>
+              </td>
+
+              <td class="text-center">
+                <input type="number"
+                       class="form-control form-control-sm text-center fw-bold mx-auto"
+                       style="width: 80px;"
+                       min="0" step="1"
+                       [(ngModel)]="item.cantidadSugerida"
+                       (ngModelChange)="onCantidadChange(item)">
+              </td>
+
+              <td style="min-width: 230px;">
+                <select class="form-select form-select-sm"
+                        [class.is-invalid]="item.proveedorId == null && item.cantidadSugerida > 0"
+                        [(ngModel)]="item.proveedorId"
+                        (ngModelChange)="onProveedorChange(item)">
+                  <option [ngValue]="null" disabled>Seleccionar proveedor…</option>
+                  <option *ngFor="let o of item.opciones" [ngValue]="o.id">
+                    {{ o.razonSocial }}{{ o.conHistorial ? '' : ' (sin historial)' }}
+                  </option>
+                </select>
+              </td>
+
+              <td class="text-end">S/ {{ item.precioEstimado | number:'1.2-2' }}</td>
+
+              <td class="text-end pe-4 fw-semibold text-primary">
+                S/ {{ subtotal(item) | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+
+          <!-- FOOTER DE LA TABLA -->
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="6" class="text-end fw-bold text-secondary py-3">TOTAL ESTIMADO DE COMPRA:</td>
+              <td colspan="2" class="text-end pe-4 fw-bold fs-5 text-primary py-3">
+                S/ {{ totalEstimado | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======== INFORMACIÓN ======== -->
+  <div class="alert alert-info mt-4 d-flex align-items-center rounded-4 shadow-sm border-0" role="alert" style="background-color: #eff6ff;">
+    <i class="bi bi-info-circle-fill fs-4 me-3" style="color: #3b82f6;"></i>
+    <div>
+      <h6 class="fw-bold mb-1" style="color: #1e3a8a;">¿Cómo se calcula esto?</h6>
+      <p class="mb-0 small" style="color: #1e40af;">
+        Se listan los productos que están en el stock mínimo o por debajo. El sistema estima cuánto se vende por día
+        (últimos 90 días), cubre el tiempo de entrega y los días de cobertura con un margen de seguridad, y suma la
+        demanda insatisfecha. Puedes editar la <b>Cantidad</b> y el <b>Proveedor</b> de cada producto; al convertir se
+        crea una orden en borrador por cada proveedor.
+      </p>
+    </div>
+  </div>
+
+</div>

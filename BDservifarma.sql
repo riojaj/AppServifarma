@@ -293,6 +293,58 @@ ADD CONSTRAINT uk_proveedor_factura UNIQUE (proveedor_id, numero_factura);
 
 DESCRIBE lotes;
 
+-- ============================================================
+-- MODIFICACIÓN PARA LA TAREA T7 (AUDITORÍA)
+-- ============================================================
+
+USE servifarmaBD;
+
+-- Modificamos la columna 'tipo' para agregar el valor 'auditoria'
+ALTER TABLE bitacora_comunicacion 
+MODIFY COLUMN tipo ENUM('novedad', 'recordatorio', 'incidencia', 'auditoria') DEFAULT 'novedad';
+
+SELECT * FROM bitacora_comunicacion ORDER BY id DESC LIMIT 5;
 
 
+-- ---------------------
 
+-- Crear tabla de Órdenes de Compra
+CREATE TABLE ordenes_compra (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    proveedor_id INT NOT NULL,
+    usuario_id INT NOT NULL, -- Quién aprobó/generó la orden
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado ENUM('pendiente', 'recibida', 'anulada') DEFAULT 'pendiente',
+    total DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Crear tabla de Detalle de Orden de Compra
+CREATE TABLE detalle_ordenes_compra (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    orden_compra_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad_solicitada INT NOT NULL,
+    precio_compra_estimado DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (orden_compra_id) REFERENCES ordenes_compra(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+
+select * from ordenes_compra;
+-- ---------------------------------
+
+SELECT id, estado FROM ordenes_compra;
+
+ALTER TABLE ordenes_compra
+  MODIFY COLUMN estado ENUM('pendiente','borrador','enviada','recibida','anulada') NOT NULL DEFAULT 'borrador';
+
+UPDATE ordenes_compra SET estado = 'borrador' WHERE estado = 'pendiente';
+
+UPDATE ordenes_compra SET estado = 'borrador' WHERE id > 0;
+
+SELECT id, estado FROM ordenes_compra;
+
+ALTER TABLE ordenes_compra
+  MODIFY COLUMN estado ENUM('borrador','enviada','recibida','anulada') NOT NULL DEFAULT 'borrador';

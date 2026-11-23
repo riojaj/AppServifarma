@@ -1,6 +1,7 @@
 package com.example.proyecto.app.config;
 
 import com.example.proyecto.app.service.InventarioService;
+import com.example.proyecto.app.service.ReposicionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 /**
  * Configuración de tareas programadas del sistema.
- * Implementa los requisitos RF6 y RF8: Alertas automáticas de stock y vencimiento.
+ * Implementa los requisitos RF6, RF8 y RF18: Alertas automáticas de stock, vencimiento y reposición.
  * 
  * @author ServiFarma Development Team
  * @since 1.0
@@ -21,6 +22,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class ScheduledTasks {
 
     private final InventarioService inventarioService;
+    private final ReposicionService reposicionService;
 
     /**
      * Actualiza el estado de los lotes vencidos automáticamente.
@@ -36,6 +38,27 @@ public class ScheduledTasks {
             log.info("Tarea completada: {} lotes marcados como vencidos", lotesActualizados);
         } catch (Exception e) {
             log.error("Error al ejecutar tarea de actualización de lotes vencidos", e);
+        }
+    }
+
+    /**
+     * Genera la lista de reposición sugerida automáticamente.
+     * Se ejecuta diariamente a las 6:00 AM según lo estipula el RF18.
+     * 
+     * Requisito: RF18 - Generación de pedidos de reposición sugeridos.
+     */
+    @Scheduled(cron = "0 0 6 * * ?")
+    public void generarReposicionSugerida() {
+        try {
+            log.info("Iniciando tarea programada: Generación de pedidos de reposición sugeridos (RF18)");
+
+            // Calcula la lista y registra fecha/cantidad de la última generación
+            // (se consulta en GET /api/reposicion/resumen).
+            reposicionService.ejecutarGeneracionDiaria();
+
+            log.info("Tarea completada: reposición sugerida generada");
+        } catch (Exception e) {
+            log.error("Error al ejecutar tarea de generación de reposición sugerida", e);
         }
     }
 

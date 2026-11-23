@@ -3,6 +3,7 @@ import { LayoutComponent } from './core/layout/layout';
 import { LoginComponent } from './features/auth/login/login';
 import { DashboardComponent } from './features/dashboard/dashboard/dashboard';
 import { AuthGuard } from './core/auth-guard';
+import { ReposicionComponent } from './features/compras/reposicion/reposicion';
 
 export const routes: Routes = [
   // ================================================================
@@ -28,6 +29,33 @@ export const routes: Routes = [
         path: 'categorias',
         children: [
           { path: '', loadComponent: () => import('./features/categorias/listar/listar').then(m => m.ListarComponent) },
+        ]
+      },
+      // ============================================================
+      // COMPRAS: REPOSICIÓN SUGERIDA (RF18) Y ÓRDENES DE COMPRA (RF31)
+      // Solo administrador (el backend también exige rol ADMIN)
+      // ============================================================
+      {
+        path: 'reposicion',
+        component: ReposicionComponent,
+        canActivate: [AuthGuard],
+        data: { roles: ['admin'] }
+      },
+      {
+        path: 'ordenes-compra',
+        canActivate: [AuthGuard],
+        data: { roles: ['admin'] },
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/compras/ordenes-compra/ordenes-compra')
+              .then(m => m.OrdenesCompraComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/compras/orden-compra-detalle/orden-compra-detalle')
+              .then(m => m.OrdenCompraDetalleComponent)
+          }
         ]
       },
       {

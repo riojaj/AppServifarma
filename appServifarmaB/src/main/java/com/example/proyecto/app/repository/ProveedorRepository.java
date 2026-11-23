@@ -74,4 +74,6 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, Integer> {
      * Útil para reportes agrupados por zona geográfica.
      */
     List<Proveedor> findAllByOrderByRegionAscRazonSocialAsc();
+
+    Optional<Proveedor> findByRazonSocial(String razonSocial);
 }

@@ -1,0 +1,125 @@
+<div class="container-fluid mt-4">
+
+  <a routerLink="/ordenes-compra" class="text-decoration-none small">
+    <i class="bi bi-arrow-left me-1"></i> Volver a órdenes de compra
+  </a>
+
+  <!-- ======== SPINNER ======== -->
+  <div *ngIf="cargando" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+  </div>
+
+  <ng-container *ngIf="orden && !cargando">
+
+    <!-- ======== ENCABEZADO ======== -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center my-3 gap-2">
+      <div>
+        <h2 class="fw-bold mb-0" style="color: #1a1a2e;">
+          <i class="bi bi-receipt text-primary me-2"></i>{{ orden.numero }}
+          <span class="badge rounded-pill fs-6 ms-2 text-capitalize" [ngClass]="claseEstado(orden.estado)">{{ orden.estado }}</span>
+        </h2>
+        <p class="text-muted small mb-0">Creada el {{ orden.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+    </div>
+
+    <!-- ======== DATOS DEL PROVEEDOR ======== -->
+    <div class="card shadow-sm border-0 rounded-4 mb-3">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="text-muted small">Proveedor</div>
+            <div class="fw-semibold"><i class="bi bi-truck me-1"></i>{{ orden.proveedorNombre }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">Correo</div>
+            <div class="fw-semibold">{{ orden.proveedorEmail || 'No registrado' }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">Teléfono / WhatsApp</div>
+            <div class="fw-semibold">{{ orden.proveedorTelefono || 'No registrado' }}</div>
+          </div>
+          <div class="col-12" *ngIf="orden.fechaEnvio">
+            <div class="text-muted small">Enviada</div>
+            <div class="fw-semibold">{{ orden.fechaEnvio | date:'dd/MM/yyyy HH:mm' }} por {{ orden.canalEnvio }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== PRODUCTOS ======== -->
+    <div class="card shadow-sm border-0 rounded-4 mb-3">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0 custom-table">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Producto</th>
+                <th class="text-end">Cantidad</th>
+                <th class="text-end">Precio unit.</th>
+                <th class="text-end pe-4">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of orden.detalles">
+                <td class="ps-4 fw-semibold">{{ d.productoNombre }}</td>
+                <td class="text-end">
+                  <input *ngIf="editable" type="number" min="0" step="1"
+                         class="form-control form-control-sm text-end ms-auto" style="width: 90px;"
+                         [(ngModel)]="d.cantidad" (ngModelChange)="onCambio(d)">
+                  <span *ngIf="!editable">{{ d.cantidad }}</span>
+                </td>
+                <td class="text-end">
+                  <input *ngIf="editable" type="number" min="0" step="0.01"
+                         class="form-control form-control-sm text-end ms-auto" style="width: 110px;"
+                         [(ngModel)]="d.precio" (ngModelChange)="onCambio(d)">
+                  <span *ngIf="!editable">S/ {{ d.precio | number:'1.2-2' }}</span>
+                </td>
+                <td class="text-end pe-4 fw-semibold text-primary">S/ {{ subtotal(d) | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <td colspan="3" class="text-end fw-bold text-secondary py-3">TOTAL ESTIMADO:</td>
+                <td class="text-end pe-4 fw-bold fs-5 text-primary py-3">S/ {{ total | number:'1.2-2' }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== NOTAS ======== -->
+    <div class="card shadow-sm border-0 rounded-4 mb-3">
+      <div class="card-body">
+        <label for="notas" class="form-label text-muted small mb-1">Notas para el proveedor</label>
+        <textarea id="notas" class="form-control" rows="2"
+                  placeholder="Ej.: entrega en la mañana, factura a nombre de la botica…"
+                  [(ngModel)]="orden.notas" (ngModelChange)="onCambio()" [disabled]="!editable"></textarea>
+      </div>
+    </div>
+
+    <div *ngIf="editable && dirty" class="text-end text-warning-emphasis small mb-2">
+      <i class="bi bi-exclamation-circle me-1"></i>
+      Tienes cambios sin guardar. Se guardarán automáticamente al enviar o generar el PDF.
+    </div>
+
+    <!-- ======== ACCIONES ======== -->
+    <div class="d-flex flex-wrap justify-content-end gap-2 mb-4">
+      <button class="btn btn-outline-danger" (click)="anular()" [disabled]="procesando"
+              *ngIf="orden.estado === 'borrador' || orden.estado === 'enviada'">
+        <i class="bi bi-x-circle me-1"></i> Anular
+      </button>
+      <button class="btn btn-outline-secondary" (click)="generarPdf()" [disabled]="procesando">
+        <i class="bi bi-file-earmark-pdf me-1"></i> Generar PDF
+      </button>
+      <button class="btn btn-outline-primary" (click)="guardar()" [disabled]="procesando || !dirty" *ngIf="editable">
+        <i class="bi bi-save me-1"></i> Guardar
+      </button>
+      <button class="btn btn-primary" (click)="enviar()" [disabled]="procesando" *ngIf="editable">
+        <span *ngIf="procesando" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!procesando" class="bi bi-send me-1"></i> Enviar orden
+      </button>
+    </div>
+
+  </ng-container>
+</div>
